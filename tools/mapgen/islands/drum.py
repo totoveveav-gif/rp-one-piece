@@ -12,9 +12,11 @@ Z = 48
 
 
 def peak(w, x, y, r, h, seed):
-    w.add(G.frustum(x, y, r * 1.35, r * 1.05, Z - 8, Z + 220, 12, {"default": M.ROCK, "top": M.SNOW}, rot=seed * 7))
-    w.add(G.prism(x, y, r, 12, Z + 220, Z + h - 120, {"default": M.ROCK, "top": M.SNOW}, rot=seed * 7))
-    w.add(G.frustum(x, y, r * 1.06, r * 0.98, Z + h - 120, Z + h, 12, {"default": M.SNOW, "top": M.SNOW},
+    w.add(G.boulder(x, y, Z + 60, r * 1.5, r * 1.4, 260, 500 + seed, {"default": M.ROCK, "top": M.SNOW}, 34,
+                    flat_bottom=Z - 8))
+    w.add(G.frustum(x, y, r * 1.04, r * 0.96, Z + 160, Z + h - 120, 24, {"default": M.ROCK, "top": M.SNOW},
+                    rot=seed * 7))
+    w.add(G.frustum(x, y, r * 1.08, r * 1.0, Z + h - 120, Z + h, 24, {"default": M.SNOW, "top": M.SNOW},
                     rot=seed * 7))
     return Z + h
 
@@ -92,7 +94,7 @@ def build(w):
     ax, ay, _, _ = L.arrival_point(KEY)
     a = math.atan2(ay - Y, ax - X)
     f = G.Frame(X + math.cos(a) * R * 0.68, Y + math.sin(a) * R * 0.68, 0, math.degrees(a))
-    w.add(f.box(-100, -100, Z - 12, 1000, 100, Z, {"top": M.PLANKS_DARK, "default": M.WOOD_BEAM}))
+    w.add(f.box(-100, -100, Z - 12, 1000, 100, Z + 3, {"top": M.PLANKS_DARK, "default": M.WOOD_BEAM}))
     K.ship(w, *f.p(650, 420)[:2], math.degrees(a), 900, "pirate")
     sg = M.sign_mat("drum", "ROYAUME DE DRUM", sub="Ile d'hiver")
     w.add(f.box(-120, -150, Z, -104, 150, Z + 120, {"+x": Mat(sg, fit=True), "-x": Mat(sg, fit=True),

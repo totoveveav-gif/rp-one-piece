@@ -629,41 +629,65 @@ def water_normal(n=512, seed=90):
     return rgb
 
 
-def world_map(markers, routes, w=1024, h=1024, extent=16384):
-    """Carte du monde facon parchemin (pour le panneau de Sabaody et les joueurs)."""
+def world_map(markers, levels, w=1024, h=1024, extent=16384):
+    """Carte des mers facon parchemin : un panneau par niveau (pour Sabaody et les joueurs)."""
     base = mix(col((236, 214, 168)), col((206, 176, 122)), fbm(w, 99, 2.0, lo=2))
     yy, xx = np.mgrid[0:h, 0:w]
     vign = np.clip(np.hypot(xx - w / 2, yy - h / 2) / (w * 0.75), 0, 1)
     base = base * (1 - 0.35 * vign[..., None] ** 2)
     im = Image.fromarray(to_img(base))
     d = ImageDraw.Draw(im)
+    ink = (90, 44, 24)
+    panels = {1: (20, 70), 2: (522, 70), 3: (20, 562)}
+    ps = 482
+    fl = font("DejaVuSerif-Bold.ttf", 22)
+    fn = font("DejaVuSerif-Bold.ttf", 17)
+    for lv, name in levels.items():
+        ox, oy = panels[lv]
+        d.rectangle([ox, oy, ox + ps, oy + ps - 30], fill=(120, 170, 190), outline=ink, width=4)
 
-    def P(x, y):
-        return (w / 2 + x / extent * w * 0.47, h / 2 - y / extent * h * 0.47)
+        def P(x, y):
+            return (ox + ps / 2 + x / extent * ps / 2, oy + (ps - 30) / 2 - y / extent * (ps - 30) / 2)
 
-    for (a, b) in routes:
-        d.line([P(*a), P(*b)], fill=(150, 60, 40), width=3)
-    f = font("DejaVuSerif-Bold.ttf", 30)
-    for m in markers:
-        if m["kind"] != "ile":
-            continue
-        poly = [P(x, y) for x, y in m["poly"]]
-        d.polygon(poly, fill=(150, 170, 90), outline=(90, 70, 40))
-        x, y = P(*m["pos"][:2])
-        tw = d.textlength(m["name"], font=f)
-        d.text((x - tw / 2 + 2, y - 15 + 2), m["name"], font=f, fill=(250, 240, 210))
-        d.text((x - tw / 2, y - 15), m["name"], font=f, fill=(70, 34, 18))
-    # rose des vents
-    cx, cy = w - 110, h - 110
-    for a, L in ((0, 80), (90, 80), (180, 80), (270, 80), (45, 45), (135, 45), (225, 45), (315, 45)):
+        if lv == 3:
+            x0, y0 = P(-extent, extent)
+            x1, y1 = P(extent, 13300)
+            d.rectangle([x0 + 3, y0 + 3, x1 - 3, y1], fill=(170, 60, 45))
+            d.text((x0 + 150, y0 + 3), "RED LINE", font=fn, fill=(255, 235, 200))
+        t = f"NIVEAU {lv} - {name.upper()}"
+        d.text((ox + 6, oy - 30), t, font=fl, fill=ink)
+        for m in markers:
+            if m["kind"] != "ile" or m.get("level") != lv:
+                continue
+            d.polygon([P(x, y) for x, y in m["poly"]], fill=(160, 180, 100), outline=ink)
+            x, y = P(*m["pos"][:2])
+            tw = d.textlength(m["name"], font=fn)
+            d.text((x - tw / 2 + 1, y - 9 + 1), m["name"], font=fn, fill=(250, 240, 210))
+            d.text((x - tw / 2, y - 9), m["name"], font=fn, fill=ink)
+        for gy, up in ((14200, True), (-14200, False)):
+            if (up and lv + 1 not in levels) or (not up and lv - 1 not in levels):
+                continue
+            x, y = P(0, gy)
+            for sx in (-14, 14):
+                d.ellipse([x + sx - 7, y - 7, x + sx + 7, y + 7], fill=(110, 100, 90), outline=ink)
+            lab = f"-> niveau {lv + 1 if up else lv - 1}"
+            d.text((x + 24, y - 9), lab, font=fn, fill=(150, 30, 30))
+    # legende
+    ox, oy = 522, 562
+    ft = font("DejaVuSerif-Bold.ttf", 40)
+    d.text((ox + 20, oy + 10), "CARTE DES MERS", font=ft, fill=ink)
+    lines = ["Prenez un bateau a la capitainerie", "de chaque port.", "",
+             "Les passages entre deux rochers", "au bord de la mer menent", "au niveau suivant.", "",
+             "Portes de la Justice (Enies Lobby)", "-> Impel Down"]
+    for i, ln in enumerate(lines):
+        d.text((ox + 24, oy + 80 + i * 30), ln, font=fn, fill=ink)
+    cx, cy = ox + 400, oy + 380
+    for a, L in ((0, 60), (90, 60), (180, 60), (270, 60), (45, 34), (135, 34), (225, 34), (315, 34)):
         r = math.radians(a)
-        d.polygon([(cx, cy), (cx + math.cos(r + 0.2) * 18, cy - math.sin(r + 0.2) * 18),
+        d.polygon([(cx, cy), (cx + math.cos(r + 0.2) * 14, cy - math.sin(r + 0.2) * 14),
                    (cx + math.cos(r) * L, cy - math.sin(r) * L),
-                   (cx + math.cos(r - 0.2) * 18, cy - math.sin(r - 0.2) * 18)], fill=(110, 50, 30))
-    d.text((cx - 9, cy - 118), "N", font=font("DejaVuSerif-Bold.ttf", 28), fill=(110, 50, 30))
-    ft = font("DejaVuSerif-Bold.ttf", 44)
-    t = "GRAND LINE"
-    d.text(((w - d.textlength(t, font=ft)) / 2, 18), t, font=ft, fill=(110, 50, 30))
+                   (cx + math.cos(r - 0.2) * 14, cy - math.sin(r - 0.2) * 14)], fill=(110, 50, 30))
+    d.text((cx - 8, cy - 92), "N", font=font("DejaVuSerif-Bold.ttf", 24), fill=(110, 50, 30))
     d.rectangle([4, 4, w - 5, h - 5], outline=(110, 70, 40), width=8)
     return im
 

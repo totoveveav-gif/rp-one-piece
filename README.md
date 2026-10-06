@@ -1,63 +1,74 @@
 # rp_onepiece_grandline : map RP One Piece pour Garry's Mod
 
-Une grande map maritime pour serveur RP One Piece. On y trouve **11 lieux emblématiques** répartis sur un océan
-de 32 000 × 32 000 unités (la taille maximale du moteur Source). Les îles sont reliées par des
-**Portes de la Grand Line** : des arches flottantes qui téléportent les joueurs et leurs navires d'une île à l'autre.
+Une grande map maritime pour serveur RP One Piece, organisée en **3 niveaux (3 mers)**.
+Dans chaque mer, des îles emblématiques sont éloignées les unes des autres, et **il faut un bateau pour se déplacer**.
+Au bord de chaque mer, **deux énormes rochers** encadrent un passage : un bateau qui passe entre eux arrive dans la mer suivante.
 
-![Vue d'ensemble](previews/vue_ensemble.png)
+![Carte des mers](docs/carte_des_mers.png)
+
+| Niveau | Mer | Îles |
+|---|---|---|
+| **1** | East Blue (départ) | Village de Fuchsia, Baratie (restaurant flottant), Loguetown |
+| **2** | Grand Line | Royaume de Drum, Water Seven, Alabasta, Enies Lobby |
+| **3** | Nouveau Monde | Archipel de Sabaody, Marineford, Impel Down, Pays de Wano, avec la **Red Line** qui ferme le nord |
+
+Chaque niveau est un océan complet de 32 000 × 32 000 unités. Les 3 niveaux sont empilés dans la même map, chacun
+dans sa propre zone étanche : on ne voit jamais les autres niveaux, et seul le niveau où l'on se trouve est affiché,
+ce qui est bon pour les performances.
+
+![Niveau 1](previews/niveau1.png)
 
 | | |
 |---|---|
+| ![Niveau 2](previews/niveau2.png) | ![Niveau 3](previews/niveau3.png) |
+| ![Passage entre deux rochers](previews/passage.png) | ![Capitainerie](previews/capitainerie.png) |
 | ![Marineford](previews/marineford.png) | ![Place d'Oris](previews/marineford_place.png) |
-| ![Sabaody](previews/sabaody.png) | ![Portail](previews/portail.png) |
 | ![Loguetown](previews/loguetown.png) | ![Échafaud de Roger](previews/loguetown_place.png) |
 | ![Wano](previews/wano.png) | ![Allée des torii](previews/wano_torii.png) |
 | ![Alabasta](previews/alabasta.png) | ![Water Seven](previews/water7.png) |
 | ![Enies Lobby](previews/enies.png) | ![Impel Down](previews/impel.png) |
 | ![Drum](previews/drum.png) | ![Fuchsia](previews/fuchsia.png) |
+| ![Sabaody](previews/sabaody.png) | ![Red Line](previews/red_line.png) |
 | ![Baratie](previews/baratie.png) | ![Sabaody au sol](previews/sabaody_sol.png) |
 
 *Rendus Blender (Cycles) faits à partir de la géométrie exacte des brushes de la map.*
 
 ---
 
-## Les lieux
+## Naviguer
 
-| Île | Ce qu'on y trouve |
-|---|---|
-| **Archipel de Sabaody** (centre, spawn) | Place centrale avec la carte du monde, 5 mangroves géantes numérotées (Grove 1, 13, 24, 41, 70), bulles flottantes, **grande roue qui tourne** (Sabaody Park), Maison des ventes, bar de Shakky, atelier de coating, hôtel, boutiques, poste de la Marine, 3 quais avec le Going Merry et le Red Force. **Plaque tournante : portails vers toutes les îles.** |
-| **Marineford** (nord) | Île en croissant autour d'une baie. QG de la Marine avec la tour 海軍 / 正義, tours rondes, place d'Oris et son échafaud, 3 navires de guerre, casernes, arsenal, terrain d'entraînement, hôpital, cantine, phares, canons sur les quais. **Murs de siège** qui sortent de la mer (bouton rouge dans le hall du QG). |
-| **Enies Lobby** (nord-est) | Plateau sur falaises avec cascades, porte principale et grand escalier, tribunal à colonnes, pont de l'Hésitation, **Tour de la Justice**. Au large : les **Portes de la Justice** (portail vers Impel Down) et une porte vers Marineford. |
-| **Impel Down** (est) | Forteresse sombre à 8 tours, **bloc de 6 cellules** à barreaux coulissants (verrouillables), bureau du directeur, quai militaire, rochers acérés. |
-| **Alabasta** (est) | Île désertique, **palais d'Alubarna** sur son plateau (dôme doré, 4 tours), tour de l'horloge, ville en grès, marché, casino **Rain Dinners** (pyramide dorée), oasis entourée de palmiers, port. |
-| **Pays de Wano** (sud-est) | **Château du shogun** à 4 étages sur des remparts de pierre, allée de torii rouges, quartier de maisons japonaises (izakaya, dojo, forgeron, ryokan), pagode à 5 étages, cerisiers en fleurs. |
-| **Loguetown** (sud) | Ville colorée aux rues pavées, **échafaud de Gol D. Roger** sur la place, base de la Marine (Smoker), armurerie Ipponmatsu, tailleur, bar, banque, journal, boulangerie, médecin, port. |
-| **Village de Fuchsia** (sud-ouest) | Village d'East Blue : **Party's Bar** (Makino), mairie, maisons, **moulin à vent qui tourne**, champs, mont Corvo et sa forêt avec le repaire de Dadan. |
-| **Baratie** (en mer) | Le restaurant flottant en forme de poisson : salle de restaurant, nageoires de combat, escaliers pour sortir de l'eau. |
-| **Water Seven** (ouest) | Cité sur canaux : 6 quartiers reliés par des ponts, paliers centraux, **grande fontaine**, Galley-La Company, **Dock 1** (chantier naval avec grue), Franky House, gare du Puffing Tom. |
-| **Royaume de Drum** (nord-ouest) | Île d'hiver : Drum Rockies (pics cylindriques), **château de Drum** au sommet, téléphérique, village de Bighorn (taverne, clinique, magasin), forêt de sapins enneigés. |
+1. **Prendre un bateau** : chaque port a une **capitainerie** (cabane au toit vert avec un ponton).
+   Le bouton rouge « LOUER UN BATEAU » fait apparaître un bateau au bout du ponton.
+2. **Naviguer** jusqu'à une autre île du même niveau. Elles sont éloignées et visibles à l'horizon, dans la brume marine.
+3. **Changer de mer** : au bord nord de la mer (et au bord sud pour revenir en arrière), deux énormes rochers
+   encadrent une brume bleue avec un panneau (« → GRAND LINE, Niveau 2 »). Passez entre les rochers **en bateau**.
+   Tout le navire arrive dans l'autre mer, équipage compris : props soudés, sièges, véhicules et joueurs à bord.
+4. **Portes de la Justice** (Enies Lobby, niveau 2) : elles mènent directement à Impel Down (niveau 3), pour les transferts de prisonniers en RP.
 
-À l'horizon, le skybox 3D prolonge l'océan à l'infini et montre la **Red Line** dans la brume, au nord.
-
-Toutes les coordonnées (bâtiments, lieux, portails, points d'arrivée) sont dans **[LIEUX.md](LIEUX.md)**.
+À la nage, on ne franchit pas les passages : un message rappelle de louer un bateau.
 
 ---
 
-## Se déplacer : les Portes de la Grand Line
+## Les îles
 
-Chaque île a des arches flottantes en mer, avec un panneau qui indique leur destination (« → MARINEFORD »).
-Il suffit de traverser la membrane bleue, à la nage ou en bateau, pour arriver au port de l'île de destination.
+| Île | Ce qu'on y trouve |
+|---|---|
+| **Village de Fuchsia** (N1) | Party's Bar (Makino), mairie, maisons, **moulin à vent qui tourne**, champs, mont Corvo et sa forêt avec le repaire de Dadan. |
+| **Baratie** (N1) | Le restaurant flottant en forme de poisson : salle de restaurant, nageoires de combat, escaliers pour sortir de l'eau, capitainerie. |
+| **Loguetown** (N1, spawn) | Ville colorée aux rues pavées, **échafaud de Gol D. Roger** sur la place, base de la Marine (Smoker), armurerie Ipponmatsu, tailleur, bar, banque, journal, boulangerie, médecin, port. |
+| **Royaume de Drum** (N2) | Île d'hiver : Drum Rockies (pics cylindriques), **château de Drum** au sommet avec téléphérique, village de Bighorn (taverne, clinique, magasin), sapins enneigés. |
+| **Water Seven** (N2) | Cité sur canaux : 6 quartiers reliés par des ponts, paliers centraux, **grande fontaine**, Galley-La Company, **Dock 1** (chantier naval avec grue), Franky House, gare du Puffing Tom. |
+| **Alabasta** (N2) | Île désertique, **palais d'Alubarna** sur son plateau (dôme doré, 4 tours), tour de l'horloge, ville en grès, marché, casino **Rain Dinners** (pyramide dorée), oasis, dunes. |
+| **Enies Lobby** (N2) | Plateau sur falaises avec cascades, porte principale et grand escalier, tribunal à colonnes, pont de l'Hésitation, **Tour de la Justice**. Au large : les **Portes de la Justice**. |
+| **Archipel de Sabaody** (N3) | 5 mangroves géantes numérotées, bulles flottantes, **grande roue qui tourne**, Maison des ventes, bar de Shakky, atelier de coating, hôtel, boutiques, poste de la Marine, carte des mers. |
+| **Marineford** (N3) | Île en croissant autour d'une baie. **QG de la Marine** avec la tour 海軍 / 正義, place d'Oris et son échafaud, navires de guerre, casernes, arsenal, hôpital, cantine, phares, canons. **Murs de siège** qui sortent de la mer (bouton rouge dans le hall du QG). |
+| **Impel Down** (N3) | Forteresse sombre à 8 tours, **bloc de 6 cellules** à barreaux coulissants (verrouillables), bureau du directeur, quai militaire, récifs acérés. |
+| **Pays de Wano** (N3) | **Château du shogun** à 4 étages sur des remparts de pierre, allée de torii rouges, maisons japonaises (izakaya, dojo, forgeron, ryokan), pagode, cerisiers en fleurs. |
 
-* **Sabaody** a un portail vers **chacune** des 10 autres îles.
-* Chaque île a un portail **retour vers Sabaody** et un portail vers **l'île suivante de la route**, qui suit l'ordre de l'histoire :
-  Fuchsia → Baratie → Loguetown → Drum → Alabasta → Water Seven → Enies Lobby → Sabaody → Impel Down → Marineford → Wano → Fuchsia.
-* **Enies Lobby** : les Portes de la Justice mènent à Impel Down, et une porte mène à Marineford.
+Les îles ont un relief naturel : des collines en *displacements* dans les zones libres (dunes à Alabasta, congères à Drum),
+des côtes arrondies et des rochers organiques. Des récifs parsèment chaque mer.
 
-On peut aussi naviguer librement : toutes les îles sont dans le même océan.
-
-**Navires entiers :** avec le fichier `addon/lua/autorun/server/sv_onepiece_seagates.lua`, un bateau construit
-(props soudés, sièges, véhicules, joueurs à bord) est téléporté en entier, dans le bon sens et avec sa vitesse.
-Sans ce fichier, la map téléporte quand même les joueurs grâce aux `trigger_teleport` classiques.
+Toutes les coordonnées (îles, bâtiments, capitaineries, passages, arrivées) sont dans **[LIEUX.md](LIEUX.md)**.
 
 ---
 
@@ -66,19 +77,33 @@ Sans ce fichier, la map téléporte quand même les joueurs grâce aux `trigger_
 | Élément | Détails |
 |---|---|
 | **Portes** | 94 portes `func_door_rotating` : on les ouvre avec la touche « Utiliser », et elles peuvent appartenir à un joueur ou être verrouillées avec DarkRP. |
+| **Capitaineries** | 11, une par île. Bouton `boat_btn_<ile>`, apparition du bateau sur `boat_spawn_<ile>`. |
+| **Passages entre mers** | `trigger_multiple` nommés `tp_gate_n1_n2sud`, etc. Arrivées sur `arrive_n2sud`, `arrive_n1nord`, etc. Ils sont réservés aux bateaux. |
 | **Cellules d'Impel Down** | 6 portes à barreaux coulissantes (`func_door`), nommées `impel_cellule_1` à `impel_cellule_6`. |
 | **Murs de siège de Marineford** | 3 murs (`marineford_murs`) cachés sous l'eau à l'entrée de la baie. Le bouton rouge du hall du QG les fait monter ou descendre. |
 | **Téléphérique de Drum** | Une cabine au village vous emmène au château, une autre au sommet vous ramène en bas. |
-| **Décors animés** | La grande roue de Sabaody et le moulin de Fuchsia tournent (`func_rotating`). |
-| **Spawns** | 24 `info_player_start` sur la place de Sabaody. Des `info_target` nommés `spawn_marine` (place d'Oris) et `spawn_pirate` (Fuchsia) servent de repères pour les métiers. |
-| **Intérieurs** | La plupart des bâtiments ont une porte, un intérieur éclairé et des meubles. Certains ont un étage (rampe intérieure). |
+| **Décors animés** | La grande roue de Sabaody et le moulin de Fuchsia tournent. |
+| **Spawns** | 24 `info_player_start` sur la place de Loguetown (East Blue). Des `info_target` nommés `spawn_marine` (Marineford) et `spawn_pirate` (Fuchsia) servent de repères pour les métiers. |
+
+### Scripts Lua (dans l'addon, côté serveur)
+* `sv_onepiece_seagates.lua` : téléporte un navire entier entre les mers. Il faut un bateau.
+* `sv_onepiece_boats.lua` : location de bateaux à la capitainerie, avec ces réglages :
+
+| ConVar | Défaut | Rôle |
+|---|---|---|
+| `op_boat_vehicle` | `Airboat` | Véhicule loué : un nom de la liste des véhicules GMod ou la classe d'entité d'un addon de bateaux. |
+| `op_boat_price` | `0` | Prix en argent DarkRP (0 = gratuit). |
+| `op_boat_cooldown` | `15` | Délai entre deux locations (secondes). |
+
+Un joueur n'a qu'un bateau loué à la fois, et il est supprimé à sa déconnexion.
+Les joueurs peuvent bien sûr aussi utiliser leurs propres bateaux (addons, constructions) : les passages les acceptent.
 
 ### Conseils DarkRP
-* Lancez le serveur sur la map : `+map rp_onepiece_grandline` dans la ligne de commande ou `server.cfg`.
-* Spawns par métier : placez-vous à l'endroit voulu (par ex. place d'Oris pour la Marine, voir `LIEUX.md`) et tapez
-  `/setspawn <commande_du_metier>`.
-* Pour réserver des portes à la Marine (QG, casernes) ou au gouvernement (Impel Down, Enies Lobby), créez des groupes de portes
-  (`darkrp_customthings/doorgroups.lua`), puis assignez-les en jeu avec le menu des portes (F2 en regardant la porte, en admin).
+* Lancez le serveur sur la map : `+map rp_onepiece_grandline`.
+* Spawns par métier : placez-vous à l'endroit voulu (coordonnées dans `LIEUX.md`) et tapez `/setspawn <commande_du_metier>`.
+  Par exemple, la Marine à Marineford (niveau 3) et les pirates à Fuchsia (niveau 1).
+* Pour réserver des portes à la Marine ou au gouvernement, créez des groupes de portes
+  (`darkrp_customthings/doorgroups.lua`), puis assignez-les en jeu avec le menu des portes (F2 en admin).
 
 ---
 
@@ -99,8 +124,8 @@ Il faut la compiler en `.bsp` une fois :
 **Après la compilation (une seule fois)**, en jeu : `map rp_onepiece_grandline`, puis
 `sv_cheats 1`, `mat_specular 1` et `buildcubemaps`. Ça génère les reflets de l'eau et des métaux.
 
-> Vous pouvez aussi ouvrir le VMF dans Hammer (ou Hammer++) pour le modifier. Chaque île est dans son propre
-> **visgroup** : on peut afficher ou masquer chaque île séparément.
+> Vous pouvez aussi ouvrir le VMF dans Hammer (ou Hammer++) pour le modifier. Chaque île et chaque mer est dans son
+> propre **visgroup** : on peut afficher ou masquer chaque île séparément.
 
 ## Installer sur un serveur
 
@@ -108,7 +133,8 @@ Il faut la compiler en `.bsp` une fois :
   `garrysmod/addons/rp_onepiece_grandline/`.
 * **Workshop** : `gmad.exe create -folder addon -out rp_onepiece_grandline.gma`, puis publiez avec `gmpublish`.
   Ajoutez `resource.AddWorkshop("<id>")` côté serveur pour que les joueurs téléchargent la map.
-* Le script Lua des portails est dans l'addon : il se charge tout seul côté serveur.
+* Les scripts Lua sont dans l'addon : ils se chargent tout seuls côté serveur. **Ils sont nécessaires** pour les
+  passages entre mers et la location de bateaux.
 
 ---
 
@@ -117,9 +143,10 @@ Il faut la compiler en `.bsp` une fois :
 ```
 maps/src/rp_onepiece_grandline.vmf   source Hammer de la map (à compiler)
 maps/src/packlist.txt                liste des fichiers à intégrer dans le BSP (bspzip)
-addon/                               addon GMod : textures (materials/onepiece), Lua des portails, addon.json
+addon/                               addon GMod : textures, scripts Lua (passages, capitaineries), addon.json
 compile.bat                          compilation automatique (Windows)
-LIEUX.md                             coordonnées de tous les lieux, portails et arrivées
+LIEUX.md                             coordonnées de tous les lieux, passages et arrivées
+docs/carte_des_mers.png              carte des 3 niveaux (aussi affichée en jeu à Sabaody)
 previews/                            rendus Blender
 blender/rp_onepiece_grandline.blend  scène Blender de la map complète (+ textures/)
 tools/mapgen/                        générateur Python de la map
@@ -127,8 +154,9 @@ tools/mapgen/                        générateur Python de la map
 
 ## Modifier ou régénérer la map (Python)
 
-Toute la map est générée par du code : formes, bâtiments, textures, portails. Vous pouvez modifier une île dans
-`tools/mapgen/islands/<ile>.py`, puis régénérer :
+Toute la map est générée par du code : formes, bâtiments, relief, textures, passages. Vous pouvez modifier une île dans
+`tools/mapgen/islands/<ile>.py`, ou changer la répartition des îles par niveau dans `tools/mapgen/layout.py`
+(`ISLANDS`, `ISLAND_LEVEL`, `LEVELS`), puis régénérer :
 
 ```bash
 pip install numpy scipy pillow srctools
@@ -139,27 +167,32 @@ python -m tools.mapgen.build --no-tex   # plus rapide, sans regénérer les text
 Le générateur vérifie automatiquement :
 * la validité de chaque brush, calculée comme le fait VBSP ;
 * les limites du moteur ;
-* la jouabilité : spawns et points d'arrivée non bloqués, portes dégagées des deux côtés, passage des portails libre.
+* l'étanchéité de chaque niveau (aucune entité hors d'une zone fermée, sinon fuite) ;
+* la jouabilité : spawns et arrivées non bloqués, portes dégagées, passages libres, place pour les bateaux,
+  pas de surfaces superposées qui scintillent.
 
 Fichiers principaux :
-* `layout.py` : position des îles, routes et portails
-* `kit.py` : bâtiments, toits, arbres, navires, portails, mobilier
+* `layout.py` : niveaux, position des îles, passages, capitaineries
+* `kit.py` : bâtiments, toits, arbres, navires, rochers, mobilier
+* `relief.py` : collines en displacements
 * `materials.py` / `texgen.py` : textures procédurales (VTF/VMT)
 * `render_blender.py` : rendus Blender
 
 ### Rendus Blender
-Ouvrez `blender/rp_onepiece_grandline.blend` : la scène contient une caméra par lieu (`Camera_<lieu>`).
-Pour refaire les rendus : `pip install bpy pyoidn OpenEXR`, puis `python tools/mapgen/render_blender.py`
-(après un build, qui produit la géométrie `tools/mapgen/build/preview.json`).
+Ouvrez `blender/rp_onepiece_grandline.blend`. Il y a une collection par niveau (« Niveau 1 », « Niveau 2 », « Niveau 3 »)
+et une caméra par lieu (`Camera_<lieu>`). Pour refaire les rendus : `pip install bpy pyoidn OpenEXR`, puis
+`python tools/mapgen/render_blender.py` (après un build).
 
 ---
 
 ## Chiffres et limites
 
-* 4 113 brushes (limite Source : 8 192), 32 791 faces de brush (limite : 65 536) et environ 1 170 entités.
+* 4 052 brushes (limite Source : 8 192), 41 067 faces de brush (limite : 65 536), 98 displacements et environ 970 entités.
   Les lumières, les `func_detail` et les `prop_static` disparaissent à la compilation.
-* Presque tout est en `func_detail`, ce qui rend VVIS rapide. Le brouillard marin limite le coût d'affichage des îles lointaines.
+* Presque tout est en `func_detail` et chaque mer est étanche, ce qui rend VVIS rapide et l'affichage léger.
 * Les meubles utilisent uniquement des modèles de Half-Life 2 et PHX, déjà inclus dans Garry's Mod.
+* Le ciel est le skybox 2D `sky_day01_01` avec un brouillard marin. Il n'y a pas de skybox 3D, car il n'en existe
+  qu'une par map et elle ne peut pas suivre 3 niveaux empilés.
 * **Pas encore testée en jeu** : la map n'a pas pu être compilée ici, car les outils Source n'existent que sous Windows.
-  Elle a été vérifiée par le générateur (géométrie, jouabilité) et relue avec `srctools`. Lors de la première compilation,
-  regardez le fichier `.log`. Si un problème apparaît, il se corrige généralement dans le code de l'île concernée.
+  Elle a été vérifiée par le générateur (géométrie, étanchéité, jouabilité) et relue avec `srctools`. Lors de la première
+  compilation, regardez le fichier `.log`. Si un problème apparaît, il se corrige généralement dans le code de l'île concernée.

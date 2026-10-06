@@ -55,7 +55,7 @@ def build(w):
 
     # ---------- colline du chateau (remparts en pierre inclines) ---------------
     hx, hy = X + 200, Y + 900
-    w.add(G.frustum(hx, hy, 1150, 900, Z - 8, ZC, 12, {"top": M.GRASS_DARK, "default": M.STONE_GREY}, rot=15))
+    w.add(G.frustum(hx, hy, 1150, 900, Z - 8, ZC, 20, {"top": M.GRASS_DARK, "default": M.STONE_GREY}, rot=15))
     K.stairs(w, hx - 128, hy - 1130 - 740, hx + 128, hy - 1000 + 120, Z, ZC + 2, "+y")
     w.add(G.box(hx - 560, hy - 400, ZC, hx + 560, hy + 560, ZC + 6, {"top": M.PAVING, "default": M.STONE_GREY}))
     # tenshu : 4 etages degressifs
@@ -124,7 +124,7 @@ def build(w):
     ax, ay, _, _ = L.arrival_point(KEY)
     a = math.atan2(ay - Y, ax - X)
     f = G.Frame(X + math.cos(a) * R * 0.68, Y + math.sin(a) * R * 0.68, 0, math.degrees(a))
-    w.add(f.box(0, -110, Z - 12, 1100, 110, Z, {"top": M.PLANKS_DARK, "default": M.WOOD_BEAM}))
+    w.add(f.box(0, -110, Z - 12, 1100, 110, Z + 3, {"top": M.PLANKS_DARK, "default": M.WOOD_BEAM}))
     torii(w, *f.p(120, 0)[:2], Z, math.degrees(a) + 90, 300, 380)
     K.ship(w, *f.p(700, 480)[:2], math.degrees(a), 950, "red")
     for i in range(8):

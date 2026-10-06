@@ -67,7 +67,7 @@ def pick_material(spec, n):
 
 
 class Face:
-    __slots__ = ("plane_pts", "normal", "dist", "mat", "poly")
+    __slots__ = ("plane_pts", "normal", "dist", "mat", "poly", "disp")
 
     def __init__(self, plane_pts, normal, dist, mat, poly):
         self.plane_pts = plane_pts  # 3 points entiers (ordre Valve, horaire)
@@ -75,6 +75,7 @@ class Face:
         self.dist = dist
         self.mat = mat
         self.poly = poly  # polygone CCW vu de l'exterieur (apercu)
+        self.disp = None  # displacement : dict(power, start, heights)
 
 
 class Brush:
@@ -84,6 +85,21 @@ class Brush:
         self.faces = faces
         allp = np.vstack([f.poly for f in faces])
         self.bbox = (allp.min(0), allp.max(0))
+
+    def translate(self, d):
+        """Deplace le brush (et l'origine d'alignement des textures)."""
+        d = np.asarray(d, float)
+        for f in self.faces:
+            f.plane_pts = tuple(np.asarray(p, float) + d for p in f.plane_pts)
+            f.poly = f.poly + d
+            f.dist = float(f.normal @ f.plane_pts[0])
+            if f.disp is not None:
+                f.disp["start"] = tuple(np.asarray(f.disp["start"], float) + d)
+            if f.mat.origin is not None:
+                m = f.mat
+                f.mat = Mat(m.name, m.fit, tuple(np.asarray(m.origin, float) + d), m.scale, m.lms, m.flip)
+        self.bbox = (self.bbox[0] + d, self.bbox[1] + d)
+        return self
 
     def retexture(self, fn):
         for f in self.faces:
@@ -150,7 +166,37 @@ def brush(points, spec):
         nn /= ln
         mat = pick_material(spec, nn)
         faces.append(Face((a, c, b), nn, float(nn @ a), mat, poly))
-    return Brush(faces)
+    return Brush(_prune(faces))
+
+
+def _prune(faces):
+    """Retire les faces qui ne touchent pas le solide (comme le ferait VBSP)
+    et recalcule les polygones a partir des plans."""
+    import itertools
+    for _ in range(4):
+        N = np.array([f.normal for f in faces])
+        D = np.array([f.dist for f in faces])
+        combos = np.array(list(itertools.combinations(range(len(faces)), 3)))
+        A = N[combos]
+        det = np.linalg.det(A)
+        ok = np.abs(det) > 1e-7
+        X = np.linalg.solve(A[ok], D[combos][ok][..., None])[..., 0]
+        X = X[np.all(X @ N.T - D <= 0.02, axis=1)]
+        X = np.unique(np.round(X, 3), axis=0)
+        keep = []
+        for i, f in enumerate(faces):
+            on = X[np.abs(X @ N[i] - D[i]) < 0.02]
+            if len(on) >= 3:
+                poly = _sort_ccw(on, N[i])
+                area = sum(np.linalg.norm(np.cross(poly[j] - poly[0], poly[j + 1] - poly[0]))
+                           for j in range(1, len(poly) - 1)) / 2
+                if area >= 1.0:
+                    f.poly = poly
+                    keep.append(f)
+        if len(keep) == len(faces):
+            return keep
+        faces = keep
+    return faces
 
 
 # ---------------------------------------------------------------------------
@@ -342,15 +388,45 @@ def convex_hull_2d(pts):
 
 
 def blob(cx, cy, rx, ry, sides, seed, jitter=0.08, rot=0.0):
-    """Polygone convexe irregulier (forme d'ile)."""
+    """Polygone convexe a contour doux (forme d'ile) : ondulations basse frequence."""
     rng = np.random.default_rng(seed)
+    sides = max(sides, 40)
+    harm = [(m, rng.uniform(-1, 1) * jitter * 1.6 / m, rng.uniform(0, 2 * math.pi)) for m in (2, 3, 4, 5)]
     pts = []
     for i in range(sides):
         a = math.radians(rot) + 2 * math.pi * i / sides
-        k = 1.0 + rng.uniform(-jitter, jitter)
+        k = 1.0 + sum(c * math.cos(m * a + p) for m, c, p in harm)
         pts.append((cx + rx * k * math.cos(a), cy + ry * k * math.sin(a)))
     return convex_hull_2d(pts)
 
 
 def scale_poly(poly, cx, cy, s):
     return [(cx + (x - cx) * s, cy + (y - cy) * s) for x, y in poly]
+
+
+def disp_patch(x0, y0, x1, y1, z, heights, mat, power=4):
+    """Carreau de relief (displacement) : socle plat de 16 unites + face superieure deformee.
+
+    heights[i][j] : hauteur du sommet de la ligne i (selon y) et colonne j (selon x).
+    Les bords doivent rester a 0 pour se raccorder au terrain plat voisin.
+    """
+    b = box(x0, y0, z - 16, x1, y1, z, {"top": mat, "default": "tools/toolsnodraw"})
+    for f in b.faces:
+        if f.normal[2] > 0.99:
+            f.disp = {"power": power, "start": (x0, y0, z), "heights": heights}
+    return b
+
+
+def boulder(cx, cy, cz, rx, ry, rz, seed, spec, n=28, flat_bottom=None):
+    """Rocher organique : enveloppe convexe de points sur un ellipsoide bosselé."""
+    rng = np.random.default_rng(seed)
+    pts = []
+    for _ in range(n):
+        v = rng.normal(size=3)
+        v /= np.linalg.norm(v)
+        k = rng.uniform(0.82, 1.0)
+        p = (cx + v[0] * rx * k, cy + v[1] * ry * k, cz + v[2] * rz * k)
+        if flat_bottom is not None:
+            p = (p[0], p[1], max(p[2], flat_bottom))
+        pts.append(p)
+    return brush(pts, spec)

@@ -1,5 +1,6 @@
 """Kit d'architecture : batiments, toits, arbres, quais, navires, portails."""
 import math
+import zlib
 
 import numpy as np
 
@@ -307,13 +308,13 @@ def block(w, x0, y0, z, sx, sy, floors, facade, roof_kind="gable", roof_mat=M.RO
     return zt + 10 + h
 
 
-def tower(w, cx, cy, z, r, h, sides=12, wall=M.WHITE, roof_mat=M.ROOF_BLUE, roof_h=None,
+def tower(w, cx, cy, z, r, h, sides=16, wall=M.WHITE, roof_mat=M.ROOF_BLUE, roof_h=None,
           cap="cone", band=None, base=M.STONE_GREY):
     w.add(G.prism(cx, cy, r + 12, sides, z - 32, z + 24, base))
     w.add(G.prism(cx, cy, r, sides, z + 24, z + h, {"top": M.WOOD_BEAM, "default": wall}))
     top = z + h
     if band:
-        w.add(G.prism(cx, cy, r + 10, sides, top - 40, top, {"default": band}))
+        w.add(G.prism(cx, cy, r + 10, sides, top - 40, top - 4, {"default": band}))
     if cap == "cone":
         rh = roof_h or r * 1.6
         w.add(G.frustum(cx, cy, r + 28, 0, top, top + rh, sides, {"bottom": M.WOOD_BEAM, "default": roof_mat}))
@@ -383,7 +384,7 @@ def palm(w, x, y, z, h=360, seed=0, lean=None):
         a = rng.uniform(0, 2 * math.pi)
         lean = (math.cos(a) * h * 0.18, math.sin(a) * h * 0.18)
     top = np.array([x + lean[0], y + lean[1], z + h])
-    w.add(G.cylinder((x, y, z - 16), top, 16, 6, M.BARK, r1=11))
+    w.add(G.cylinder((x, y, z - 16), top, 16, 8, M.BARK, r1=11))
     n = 6
     rot0 = rng.uniform(0, 360)
     for i in range(n):
@@ -399,16 +400,15 @@ def palm(w, x, y, z, h=360, seed=0, lean=None):
     w.add(G.prism(top[0], top[1], 16, 6, top[2] - 18, top[2] + 6, M.PALM))
 
 
-def round_tree(w, x, y, z, h=300, r=120, mat=M.LEAVES, trunk=M.BARK, sides=8):
-    w.add(G.cylinder((x, y, z - 16), (x, y, z + h * 0.55), 14, 6, trunk, r1=10))
-    w.add(G.frustum(x, y, r * 0.75, r, z + h * 0.42, z + h * 0.72, sides, mat))
-    w.add(G.frustum(x, y, r, r * 0.45, z + h * 0.72, z + h, sides, mat))
+def round_tree(w, x, y, z, h=300, r=120, mat=M.LEAVES, trunk=M.BARK, sides=12):
+    w.add(G.cylinder((x, y, z - 16), (x, y, z + h * 0.55), 14, 8, trunk, r1=10))
+    w.add(G.boulder(x, y, z + h * 0.7, r, r, h * 0.32, int(abs(x * 7 + y * 13)) % 99991, mat, 26))
 
 
 def pine(w, x, y, z, h=420, r=130, mat=M.PINE):
     w.add(G.cylinder((x, y, z - 16), (x, y, z + h * 0.3), 14, 6, M.BARK, r1=10))
     for k, (a, b, rr) in enumerate(((0.2, 0.55, 1.0), (0.45, 0.8, 0.75), (0.68, 1.0, 0.5))):
-        w.add(G.frustum(x, y, r * rr, 0, z + h * a, z + h * b, 8, mat, rot=k * 22))
+        w.add(G.frustum(x, y, r * rr, 0, z + h * a, z + h * b, 12, mat, rot=k * 22))
 
 
 def bush(w, x, y, z, r=48, mat=M.LEAVES):
@@ -417,8 +417,8 @@ def bush(w, x, y, z, r=48, mat=M.LEAVES):
 
 def mangrove(w, x, y, z, r=200, h=1300, canopy=900, grove=None, face_yaw=-90):
     """Mangrove geante de l'archipel de Sabaody."""
-    w.add(G.frustum(x, y, r * 1.9, r * 1.05, z - 24, z + 140, 10, M.MANGROVE))
-    w.add(G.prism(x, y, r, 10, z + 140, z + h, M.MANGROVE))
+    w.add(G.frustum(x, y, r * 1.9, r * 1.05, z - 24, z + 140, 16, M.MANGROVE))
+    w.add(G.prism(x, y, r, 16, z + 140, z + h, M.MANGROVE))
     # racines
     for i in range(5):
         a = math.radians(i * 72 + 15)
@@ -432,16 +432,15 @@ def mangrove(w, x, y, z, r=200, h=1300, canopy=900, grove=None, face_yaw=-90):
         p1 = (x + math.cos(a) * canopy * 0.55, y + math.sin(a) * canopy * 0.55, z + h * 0.97)
         w.add(G.cylinder(p0, p1, r * 0.3, 6, M.MANGROVE, r1=r * 0.15))
     rng = np.random.default_rng(int(abs(x) + abs(y)) % 9973)
-    w.add(G.frustum(x, y, canopy * 0.55, canopy * 0.75, z + h * 0.93, z + h * 1.04, 12, M.CANOPY))
-    w.add(G.frustum(x, y, canopy * 0.75, canopy * 0.35, z + h * 1.04, z + h * 1.2, 12, M.CANOPY))
+    w.add(G.boulder(x, y, z + h * 1.06, canopy * 0.78, canopy * 0.78, h * 0.16, int(rng.integers(1 << 30)),
+                    M.CANOPY, 36))
     for i in range(6):
         a = rng.uniform(0, 2 * math.pi)
         d = canopy * rng.uniform(0.45, 0.7)
         rr = canopy * rng.uniform(0.32, 0.45)
         bx, by = x + math.cos(a) * d, y + math.sin(a) * d
-        zb = z + h * rng.uniform(0.9, 1.02)
-        w.add(G.frustum(bx, by, rr * 0.7, rr, zb, zb + rr * 0.35, 10, M.CANOPY, rot=rng.uniform(0, 36)))
-        w.add(G.frustum(bx, by, rr, rr * 0.3, zb + rr * 0.35, zb + rr * 0.75, 10, M.CANOPY, rot=rng.uniform(0, 36)))
+        zb = z + h * rng.uniform(0.9, 1.02) + i * 7
+        w.add(G.boulder(bx, by, zb + rr * 0.3, rr, rr, rr * 0.42, int(rng.integers(1 << 30)), M.CANOPY, 30))
     if grove is not None:
         mat = M.grove_mat(grove)
         f = G.Frame(x, y, z, face_yaw)
@@ -457,7 +456,7 @@ def mangrove(w, x, y, z, r=200, h=1300, canopy=900, grove=None, face_yaw=-90):
 def dock(w, x0, y0, x1, y1, z=24, posts=True, mat=M.PLANKS_LIGHT):
     xa, xb = sorted((x0, x1))
     ya, yb = sorted((y0, y1))
-    w.add(G.box(xa, ya, z - 12, xb, yb, z, {"top": mat, "default": M.WOOD_BEAM}))
+    w.add(G.box(xa, ya, z - 12, xb, yb, z + 3, {"top": mat, "default": M.WOOD_BEAM}))
     if posts:
         step = 256
         xs = list(np.arange(xa + 16, xb - 15, step)) + [xb - 16]
@@ -544,50 +543,13 @@ def ship(w, x, y, yaw, L=900, style="marine", z=0, name=None):
 
 
 # ---------------------------------------------------------------------------
-# Portails de la Grand Line (teleportation en mer)
+# Teleportation (geree par le Lua : seuls les bateaux passent)
 # ---------------------------------------------------------------------------
 
-GATE_W = 640
-
-
-def sea_gate(w, x, y, yaw, sign_mat, tp_target, gid, color=(120, 230, 255)):
-    """Arche flottante : traverser la membrane teleporte vers une autre ile.
-
-    yaw : direction de traversee (le panneau fait face aux navires qui arrivent).
-    """
-    f = G.Frame(x, y, 0, yaw)
-    W = GATE_W
-    for sgn in (-1, 1):
-        py = sgn * (W / 2 + 56)
-        px, pyw = f.p(0, py)[:2]
-        w.add(G.frustum(px, pyw, 130, 80, -768, 24, 8, M.ROCK))
-        w.add(G.prism(px, pyw, 56, 8, 24, 640, {"default": M.MARBLE, "top": M.GOLD}))
-        w.add(G.prism(px, pyw, 72, 8, 24, 72, M.GOLD))
-        w.add(G.frustum(px, pyw, 72, 0, 736, 880, 8, M.ROOF_TEAL))
-        w.add(G.prism(px, pyw, 66, 8, 640, 736, M.GOLD))
-        w.light(f.p(-80, py * 0.9, 600), color, 900, fifty=400, zero=1400)
-        w.light(f.p(80, py * 0.9, 600), color, 900, fifty=400, zero=1400)
-    # linteau + panneau
-    w.add(f.box(-40, -W / 2 - 120, 640, 40, W / 2 + 120, 700, {"default": M.TORII, "top": M.ROOF_TEAL}))
-    w.add(f.box(-56, -W / 2 - 150, 700, 56, W / 2 + 150, 724, M.ROOF_TEAL))
-    w.add(f.box(-8, -W / 2 + 70, 524, 8, W / 2 - 70, 628,
-                {"+x": Mat(sign_mat, fit=True), "-x": Mat(sign_mat, fit=True), "default": M.WOOD_BEAM}))
-    # membrane (non solide) + declencheur
-    memb = f.box(-3, -W / 2, -64, 3, W / 2, 516, {"+x": Mat(M.PORTAL, fit=True),
-                                                    "-x": Mat(M.PORTAL, fit=True), "default": M.NODRAW})
-    w.ent("func_illusionary", brushes=memb, rendermode=0, renderamt=255, rendercolor="255 255 255",
-          disablereceiveshadows=1, disableshadows=1)
-    gate_triggers(w, f.box(-48, -W / 2, -560, 48, W / 2, 516, M.TRIGGER),
-                  f.box(-48, -W / 2, -560, 48, W / 2, 516, M.TRIGGER), gid, tp_target)
-    w.light(f.p(0, 0, 260), color, 1400, fifty=420, zero=1600)
-
-
-def gate_triggers(w, b_tp, b_multi, gid, tp_target):
-    """trigger_teleport natif (joueurs) + trigger_multiple qui appelle le Lua
-    (sv_onepiece_seagates.lua) pour teleporter un navire entier avec son equipage."""
-    w.ent("trigger_teleport", brushes=b_tp, targetname=f"tpn_gate_{gid}", target=tp_target,
-          spawnflags=1 | 2 | 8 | 64, StartDisabled=0)
-    e = w.ent("trigger_multiple", brushes=b_multi, targetname=f"tp_gate_{gid}", spawnflags=1 | 2 | 8 | 64,
+def gate_triggers(w, trig, gid):
+    """trigger_multiple qui appelle le Lua (sv_onepiece_seagates.lua) : seuls les
+    bateaux (vehicules, props soudes et leur equipage) traversent le portail."""
+    e = w.ent("trigger_multiple", brushes=trig, targetname=f"tp_gate_{gid}", spawnflags=1 | 2 | 8 | 64,
               wait=0.1, StartDisabled=0)
     add_output(e, "OnStartTouch", "op_seagate_lua", "RunCode")
 
@@ -742,8 +704,93 @@ def quay_terrain(w, poly, z_top, top=M.PAVING, side=M.STONE_GREY, flare=1.05):
     cy = sum(p[1] for p in poly) / len(poly)
     base = G.scale_poly(poly, cx, cy, flare)
     w.add(G.poly_frustum(base, poly, -768, z_top, {"top": top, "default": side}))
+    from .relief import register
+    register(w, poly, z_top, top)
 
 
 def water_steps(w, x0, y0, x1, y1, z0, z1, rise, mat=M.STONE_GREY):
     """Escalier/rampe pour sortir de l'eau."""
     w.add(G.ramp(x0, y0, z0, x1, y1, z1, rise, {"top": mat, "default": mat}))
+
+
+# ---------------------------------------------------------------------------
+# Capitainerie : location de bateaux (gere par sv_onepiece_boats.lua)
+# ---------------------------------------------------------------------------
+
+def harbor(w, key, x, y, z, yaw, pier=520, sign=None):
+    """Cabane de capitainerie face a la mer (+x local) + ponton + point d'apparition du bateau.
+
+    Le bouton "boat_btn_<cle>" appelle OP_BoatRental() ; le bateau apparait
+    sur "boat_spawn_<cle>", au bout du ponton.
+    """
+    f = G.Frame(x, y, z, yaw)
+    # cabane ouverte vers le ponton
+    w.add(f.box(-96, -96, -24, 96, 96, 10, {"top": M.PLANKS, "default": M.WOOD_BEAM}))
+    w.add(f.box(-96, -96, 10, -80, 96, 150, Mat(M.PLANKS_LIGHT, scale=(128, 128))))
+    w.add(f.box(-80, -96, 10, 96, -80, 150, Mat(M.PLANKS_LIGHT, scale=(128, 128))))
+    w.add(f.box(-80, 80, 10, 96, 96, 150, Mat(M.PLANKS_LIGHT, scale=(128, 128))))
+    w.add(f.hull([(-112, -112, 150), (112, -112, 150), (-112, 112, 150), (112, 112, 150),
+                  (-112, -112, 160), (112, -112, 160), (-112, 112, 160), (112, 112, 160),
+                  (0, -112, 230), (0, 112, 230)], {"default": M.ROOF_TEAL, "bottom": M.WOOD_BEAM}))
+    sg = sign or M.sign_mat("capitainerie", "CAPITAINERIE", sub="Location de bateaux",
+                            color=(255, 240, 190), board=(40, 80, 140))
+    w.add(f.box(96, -88, 104, 104, 88, 148, {"+x": Mat(sg, fit=True), "default": M.WOOD_BEAM}))
+    # bouton (mur du fond, cote interieur)
+    btn = f.box(-80, -14, 54, -76, 14, 82, M.RED)
+    e = w.ent("func_button", brushes=btn, targetname=f"boat_btn_{key}", spawnflags=1 | 1024,
+              speed=5, wait=2, lip=2, sounds=0, rendercolor="255 255 255", renderamt=255)
+    add_output(e, "OnPressed", "op_boat_lua", "RunCode")
+    w.add(f.box(-80, -40, 90, -77, 40, 120, {"+x": Mat(M.sign_mat("louer", "LOUER UN BATEAU",
+                                                                  board=(150, 40, 40)), fit=True),
+                                             "default": M.WOOD_BEAM}))
+    w.light(f.p(0, 0, 130), (255, 220, 170), 90)
+    # ponton
+    w.add(f.box(96, -64, -6, 96 + pier, 64, 9, {"top": M.PLANKS_LIGHT, "default": M.WOOD_BEAM}))
+    for d in range(200, int(pier) + 1, 220):
+        for s in (-1, 1):
+            w.add(G.prism(*f.p(96 + d, s * 56)[:2], 8, 6, -400, z + 18, M.WOOD_BEAM))
+    w.prop(P_CLEAT, f.p(96 + pier - 30, 70, 6), yaw)
+    # bateau : apparait a cote du bout du ponton
+    w.ent("info_target", f.p(96 + pier + 220, 0, -z + 18), targetname=f"boat_spawn_{key}",
+          angles=(0, yaw, 0))
+    w.marker(f"Capitainerie ({key})", (x, y, z), "lieu")
+
+
+# ---------------------------------------------------------------------------
+# Passage entre niveaux : deux enormes rochers, le teleporteur est entre eux
+# ---------------------------------------------------------------------------
+
+def level_gate(w, x, y, yaw, sign_mat, gid, gap=1100):
+    """yaw = direction de traversee. Le passage (gap) laisse passer un grand navire."""
+    f = G.Frame(x, y, 0, yaw)
+    rng = np.random.default_rng(zlib.crc32(gid.encode()))
+    for s in (-1, 1):
+        cy = s * (gap / 2 + 620)
+        # gros rochers empiles (formes organiques)
+        bx, by = f.p(0, cy)[:2]
+        w.add(G.boulder(bx, by, -200, 780, 640, 760, rng.integers(1 << 30), M.ROCK, 34, flat_bottom=-768))
+        tx, ty = f.p(rng.uniform(-80, 80), cy + s * 40)[:2]
+        w.add(G.boulder(tx, ty, 1100, 560, 470, 1250, rng.integers(1 << 30), M.ROCK, 34))
+        px, py = f.p(rng.uniform(-60, 60), cy + s * 90)[:2]
+        w.add(G.boulder(px, py, 2150, 300, 260, 420, rng.integers(1 << 30), M.ROCK, 26))
+        for k in range(3):
+            ox, oy = rng.uniform(-520, 520), s * rng.uniform(250, 650)
+            px, py = f.p(ox, cy + oy)[:2]
+            r = rng.uniform(280, 430)
+            w.add(G.boulder(px, py, rng.uniform(-200, 250), r, r * 0.85, rng.uniform(500, 800),
+                            rng.integers(1 << 30), M.ROCK_DARK, 26, flat_bottom=-768))
+        # torches sur les rochers
+        w.light(f.p(-300, s * (gap / 2 + 120), 420), (255, 190, 120), 1600, fifty=500, zero=1800)
+        # panneau sur pilotis devant le rocher, face aux navires
+        if s < 0:
+            for py in (-gap / 2 - 60, -gap / 2 - 360):
+                w.add(G.prism(*f.p(-420, py)[:2], 14, 6, -500, 340, M.WOOD_BEAM))
+            w.add(f.box(-430, -gap / 2 - 420, 240, -414, -gap / 2 - 0, 360,
+                        {"-x": Mat(sign_mat, fit=True), "+x": Mat(sign_mat, fit=True), "default": M.WOOD_BEAM}))
+    # brume tourbillonnante (visuel) + declencheur reserve aux bateaux
+    memb = f.box(-3, -gap / 2 - 40, -96, 3, gap / 2 + 40, 900,
+                 {"+x": Mat(M.PORTAL, fit=True), "-x": Mat(M.PORTAL, fit=True), "default": M.NODRAW})
+    w.ent("func_illusionary", brushes=memb, rendermode=0, renderamt=255, disableshadows=1)
+    gate_triggers(w, f.box(-64, -gap / 2 + 20, -560, 64, gap / 2 - 20, 900, M.TRIGGER), gid)
+    w.light(f.p(0, 0, 360), (130, 230, 255), 2400, fifty=600, zero=2200)
+    w.light(f.p(-500, 0, 200), (130, 230, 255), 1200, fifty=500, zero=1600)

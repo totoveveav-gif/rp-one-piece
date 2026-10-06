@@ -1,32 +1,26 @@
 --[[-------------------------------------------------------------------------
-    rp_onepiece_grandline - Portes de la Grand Line
+    rp_onepiece_grandline - Passages entre les mers (niveaux)
 
-    La map teleporte deja les joueurs tout seule (trigger_teleport).
-    Ce script ajoute la teleportation des NAVIRES ENTIERS : props soudes,
-    vehicules, sieges et joueurs a bord arrivent ensemble, dans le bon sens,
-    avec leur vitesse conservee.
+    La map contient 3 mers empilees (East Blue, Grand Line, Nouveau Monde).
+    Au bord de chaque mer, deux enormes rochers encadrent un passage : un
+    BATEAU qui le traverse arrive dans la mer suivante (ou precedente).
+    Il faut un bateau : un joueur a la nage n'est pas teleporte.
 
-    Fonctionnement : chaque portail contient un trigger_multiple nomme
-    "tp_gate_<ile>_<destination>" qui appelle OP_SeaGate() via l'entite
-    lua_run "op_seagate_lua". La destination est l'entite
-    info_teleport_destination "arrive_<destination>".
+    Est considere comme un bateau : un vehicule, ou un ensemble de props
+    (soudes / contraints) sur lequel le joueur est assis ou debout.
+    Tout le navire (props, sieges, vehicules, joueurs a bord) arrive ensemble,
+    dans le bon sens, avec sa vitesse.
+
+    Fonctionnement : chaque passage contient un trigger_multiple nomme
+    "tp_gate_<depart>_<destination>" qui appelle OP_SeaGate() via l'entite
+    lua_run "op_seagate_lua". L'arrivee est l'info_teleport_destination
+    "arrive_<destination>".
 ---------------------------------------------------------------------------]]
 
 if game.GetMap() ~= "rp_onepiece_grandline" then return end
 
-local COOLDOWN = 4          -- secondes avant qu'une entite puisse reprendre un portail
+local COOLDOWN = 4          -- secondes avant qu'une entite puisse reprendre un passage
 local cooldown = setmetatable({}, { __mode = "k" })
-
-local function disableNativeGates()
-    -- quand ce script est present, il gere tout (joueurs compris)
-    for _, t in ipairs(ents.FindByClass("trigger_teleport")) do
-        if string.StartWith(t:GetName(), "tpn_gate_") then
-            t:Fire("Disable")
-        end
-    end
-end
-hook.Add("InitPostEntity", "OP_SeaGates_Init", disableNativeGates)
-hook.Add("PostCleanupMap", "OP_SeaGates_Init", disableNativeGates)
 
 local function collectShip(ent)
     local group = {}
@@ -40,8 +34,7 @@ local function collectShip(ent)
         elseif IsValid(ground) and not ground:IsWorld() then
             root = ground
         else
-            group[ent] = true
-            return group, ent
+            return nil   -- a la nage : pas de bateau
         end
     end
 
@@ -75,6 +68,14 @@ function OP_SeaGate()
     if not IsValid(dest) then return end
 
     local group, root = collectShip(ent)
+    if not group then
+        if ent:IsPlayer() and (ent.OPGateMsg or 0) < CurTime() then
+            ent.OPGateMsg = CurTime() + 6
+            ent:ChatPrint("[Grand Line] Il faut un bateau pour franchir ce passage ! "
+                .. "Louez-en un a la capitainerie d'un port.")
+        end
+        return
+    end
     local anchorPos = root:GetPos()
     local anchorYaw = root:IsPlayer() and root:EyeAngles().y or root:GetAngles().y
     local anchorAng = Angle(0, anchorYaw, 0)

@@ -109,7 +109,7 @@ def build(w):
     for off in (-700, 0, 700):
         f = G.Frame(X + math.cos(a) * R * 0.66 - math.sin(a) * off, Y + math.sin(a) * R * 0.6 + math.cos(a) * off,
                     0, math.degrees(a))
-        w.add(f.box(0, -100, Z - 12, 1000, 100, Z, {"top": M.PLANKS_LIGHT, "default": M.WOOD_BEAM}))
+        w.add(f.box(0, -100, Z - 12, 1000, 100, Z + 3, {"top": M.PLANKS_LIGHT, "default": M.WOOD_BEAM}))
         for d in range(200, 1000, 300):
             w.prop(K.P_CLEAT, f.p(d, 110, Z), 0)
     f = G.Frame(X + math.cos(a) * R * 0.66, Y + math.sin(a) * R * 0.6, 0, math.degrees(a))

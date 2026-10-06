@@ -24,19 +24,19 @@ def cell_block(w, x0, y0, z, ncells=6, cw=144, depth=176):
     by = iy1 - depth
     for i in range(1, ncells):
         cx = ix0 + i * cw
-        w.add(G.box(cx, by, zf, cx + 16, iy1, zf + 160, M.STONE_DARK))
+        w.add(G.box(cx, by, zf, cx + 16, iy1, zf + 152, M.STONE_DARK))
     for i in range(ncells):
         cx0 = ix0 + i * cw + 16
         cx1 = cx0 + cw - 16
         # barreaux fixes + porte coulissante
-        w.add(G.box(cx0, by, zf, cx0 + 24, by + 8, zf + 160, M.BARS))
+        w.add(G.box(cx0, by, zf, cx0 + 24, by + 8, zf + 152, M.BARS))
         door = G.box(cx0 + 24, by, zf, cx1 - 8, by + 8, zf + 136, M.BARS)
         w.ent("func_door", brushes=door, targetname=f"impel_cellule_{i + 1}", movedir="0 0 0",
               spawnflags=256 | 32, speed=80, wait=-1, lip=12, dmg=0, forceclosed=0,
               noise1="doors/default_move.wav", noise2="doors/default_stop.wav",
               rendercolor="255 255 255", renderamt=255, spawnpos=0, locked_sentence=0)
-        w.add(G.box(cx1 - 8, by, zf, cx1, by + 8, zf + 160, M.BARS))
-        w.add(G.box(cx0, by, zf + 136, cx1, by + 8, zf + 160, M.IRON))
+        w.add(G.box(cx1 - 8, by, zf, cx1, by + 8, zf + 152, M.BARS))
+        w.add(G.box(cx0, by, zf + 136, cx1, by + 8, zf + 152, M.IRON))
         w.light((cx0 + cw / 2, iy1 - 60, zf + 130), (255, 150, 90), 60)
         w.prop(K.P_BED, (cx0 + 40, iy1 - 70, zf + 20), 90)
     return info
@@ -75,12 +75,13 @@ def build(w):
                       sign=M.sign_mat("directeur", "DIRECTION"), trim=M.STONE_DARK, base=M.STONE_DARK)
     K.furnish(w, info, "office", 50)
 
-    # port + navires de la Marine
-    ax, ay, _, ayaw = L.arrival_point(KEY)
+    # port + navires de la Marine (+ arrivee depuis les Portes de la Justice)
+    ax, ay, az, ayaw = L.arrival_point(KEY)
+    K.tp_destination(w, "arrive_impel", ax, ay, az, ayaw)
     a = math.atan2(ay - Y, ax - X)
     px, py = X + math.cos(a) * R * 0.78, Y + math.sin(a) * R * 0.78
     f = G.Frame(px, py, 0, math.degrees(a))
-    w.add(f.box(-120, -160, 12, 700, 160, 64, {"top": M.STONE_GREY, "default": M.STONE_DARK}))
+    w.add(f.box(-120, -160, 12, 700, 160, 67, {"top": M.STONE_GREY, "default": M.STONE_DARK}))
     K.ship(w, *f.p(500, 520)[:2], math.degrees(a), 1100, "marine")
     for s in (-1, 1):
         K.flagpole(w, *f.p(600, s * 140)[:2], 64, M.FLAG_MARINE, 300)
@@ -95,5 +96,6 @@ def build(w):
         if abs((a - a_arr + math.pi) % (2 * math.pi) - math.pi) < math.radians(30):
             continue
         rx, ry = X + math.cos(a) * R * 1.05, Y + math.sin(a) * R * 1.05
-        w.add(G.frustum(rx, ry, 220, 30, -768, 380 + 120 * (i % 3), 7, M.ROCK_DARK, rot=i * 13))
+        w.add(G.boulder(rx, ry, -100 + 60 * (i % 3), 240, 200, 520 + 120 * (i % 3), 900 + i, M.ROCK_DARK, 26,
+                        flat_bottom=-768))
     K.env_cubemap(w, X, Y - 600, Z + 128)

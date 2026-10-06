@@ -43,8 +43,9 @@ def build(w):
 
     # mont Corvo (au nord-ouest) + foret
     mx, my = X - 500, Y + 900
-    w.add(G.frustum(mx, my, 1000, 520, Z - 8, Z + 420, 11, {"top": M.GRASS_DARK, "default": M.GRASS_DARK}, rot=7))
-    w.add(G.frustum(mx - 150, my + 300, 380, 120, Z + 420, Z + 760, 9, {"top": M.GRASS_DARK, "default": M.ROCK}))
+    w.add(G.frustum(mx, my, 1000, 520, Z - 8, Z + 420, 24, {"top": M.GRASS_DARK, "default": M.GRASS_DARK}, rot=7))
+    w.add(G.boulder(mx - 150, my + 300, Z + 420, 420, 380, 360, 77, {"default": M.ROCK, "top": M.GRASS_DARK}, 30,
+                    flat_bottom=Z + 400))
     for i in range(16):
         a = math.radians(i * 22.5)
         r = 760 + (i % 3) * 90
@@ -85,7 +86,7 @@ def build(w):
     ax, ay, _, _ = L.arrival_point(KEY)
     a = math.atan2(ay - Y, ax - X)
     f = G.Frame(X + math.cos(a) * R * 0.68, Y + math.sin(a) * R * 0.68, 0, math.degrees(a))
-    w.add(f.box(-100, -100, Z - 12, 900, 100, Z, {"top": M.PLANKS_LIGHT, "default": M.WOOD_BEAM}))
+    w.add(f.box(-100, -100, Z - 12, 900, 100, Z + 3, {"top": M.PLANKS_LIGHT, "default": M.WOOD_BEAM}))
     K.ship(w, *f.p(600, 420)[:2], math.degrees(a), 780, "merry")
     K.ship(w, *f.p(600, -420)[:2], math.degrees(a) + 180, 1050, "red")
     sm = M.sign_mat("fuchsia", "VILLAGE DE FUCHSIA", sub="East Blue")

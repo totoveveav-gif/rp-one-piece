@@ -30,7 +30,7 @@ def build(w):
 
     # ---------- plateau d'Alubarna + palais ----------------------------------
     px, py = X + 200, Y + 1000
-    mesa = G.blob(px, py, 1150, 950, 14, 42, 0.04)
+    mesa = G.blob(px, py, 1150, 950, 28, 42, 0.04)
     w.add(G.poly_frustum(G.scale_poly(mesa, px, py, 1.07), mesa, Z - 8, ZP,
                          {"top": M.SANDPAVE, "default": M.SANDBLOCK}))
     K.stairs(w, px - 160, py - 950 - 760, px + 160, py - 900, Z, ZP + 2, "+y", M.STAIRS_SAND, M.SANDBLOCK)
@@ -118,8 +118,8 @@ def build(w):
     ax, ay, _, _ = L.arrival_point(KEY)
     a = math.atan2(ay - Y, ax - X)
     f = G.Frame(X + math.cos(a) * R * 0.68, Y + math.sin(a) * R * 0.68, 0, math.degrees(a))
-    w.add(f.box(0, -110, Z - 12, 1150, 110, Z, {"top": M.PLANKS_LIGHT, "default": M.WOOD_BEAM}))
-    w.add(f.box(1000, -420, Z - 12, 1150, 420, Z, {"top": M.PLANKS_LIGHT, "default": M.WOOD_BEAM}))
+    w.add(f.box(0, -110, Z - 12, 1000, 110, Z + 3, {"top": M.PLANKS_LIGHT, "default": M.WOOD_BEAM}))
+    w.add(f.box(1000, -420, Z - 12, 1150, 420, Z + 3, {"top": M.PLANKS_LIGHT, "default": M.WOOD_BEAM}))
     K.ship(w, *f.p(800, -560)[:2], math.degrees(a), 900, "pirate")
     sm = M.sign_mat("alabasta", "ALABASTA", sub="Royaume du desert", board=(190, 140, 80))
     w.add(f.box(-30, -150, Z, -14, 150, Z + 120, {"+x": Mat(sm, fit=True), "-x": Mat(sm, fit=True),
@@ -128,7 +128,8 @@ def build(w):
     # dunes & rochers
     for i, (lx, ly, r, h) in enumerate(((1500, -2000, 500, 160), (-2300, -1300, 420, 140), (2400, -600, 380, 200),
                                         (-600, 2300, 520, 180), (1200, 2300, 360, 120))):
-        w.add(G.frustum(X + lx, Y + ly, r * 1.3, r * 0.7, Z - 10, Z + h * 0.55, 11, M.DESERT, rot=i * 17))
+        w.add(G.boulder(X + lx, Y + ly, Z - 40, r * 1.4, r * 1.1, h * 0.9, 300 + i, M.DESERT, 36,
+                        flat_bottom=Z - 20))
     for i in range(10):
         a = math.radians(i * 36 + 5)
         K.palm(w, X + math.cos(a) * R * 0.68, Y + math.sin(a) * R * 0.64, Z, 360, seed=90 + i)

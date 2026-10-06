@@ -19,8 +19,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BUILD = os.path.join(HERE, "build")
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 S = 0.0254           # 1 unite Source = 1 pouce
-SKY_Z = 10240
-SKY_SCALE = 16
 SUN_YAW = 50
 SUN_PITCH = -50
 
@@ -73,72 +71,83 @@ def image_mat(name, png_dir):
     return mat
 
 
+LEVELS = {1: -11264, 2: -3072, 3: 5120}
+
+
+def level_of(z):
+    for lv, sz in LEVELS.items():
+        if sz - 1200 < z < sz + 3800:
+            return lv
+    return 0
+
+
+def level_collection(lv):
+    name = f"Niveau {lv}"
+    if name not in bpy.data.collections:
+        col = bpy.data.collections.new(name)
+        bpy.context.scene.collection.children.link(col)
+    return bpy.data.collections[name]
+
+
 def build_geometry(data, png_dir):
     objs = []
     for name, d in data["materials"].items():
         verts = d["verts"]
-        faces = d["faces"]
         uvs = d["uvs"]
         short = name.split("/", 1)[1]
-        # skybox 3D -> echelle reelle (sauf fond marin/eau du skybox)
-        sky = [v[2] > 8000 for v in verts]
-        if any(sky):
-            keep_f = []
-            for f in faces:
-                if verts[f[0]][2] > 8000 and short in ("seafloor",):
-                    continue
-                keep_f.append(f)
-            faces = keep_f
-        vv = []
-        for v in verts:
-            if v[2] > 8000:
-                vv.append(((v[0]) * SKY_SCALE * S, (v[1]) * SKY_SCALE * S, (v[2] - SKY_Z) * SKY_SCALE * S))
-            else:
-                vv.append((v[0] * S, v[1] * S, v[2] * S))
-        mesh = bpy.data.meshes.new(short)
-        mesh.from_pydata(vv, [], faces)
-        uvl = mesh.uv_layers.new(name="UVMap")
-        flat = []
-        for poly in mesh.polygons:
-            for li in poly.loop_indices:
-                flat.extend(uvs[mesh.loops[li].vertex_index])
-        uvl.data.foreach_set("uv", flat)
-        mesh.update()
-        ob = bpy.data.objects.new(short, mesh)
-        bpy.context.scene.collection.objects.link(ob)
         mat = image_mat(name, png_dir)
-        ob.data.materials.append(mat)
-        if any(v[2] > 8000 for v in verts):
-            # partie lointaine (skybox 3D) : objet separe avec perspective aerienne
-            far = [i for i, f in enumerate(mesh.polygons) if verts[faces[i][0]][2] > 8000]
-            if far:
-                fm = mat.copy()
-                fm.name = short + "_loin"
-                nt = fm.node_tree
-                b = nt.nodes.get("Principled BSDF")
-                outn = [n for n in nt.nodes if n.type == "OUTPUT_MATERIAL"][0]
-                em = nt.nodes.new("ShaderNodeEmission")
-                em.inputs["Color"].default_value = (*HAZE_COLOR, 1)
-                em.inputs["Strength"].default_value = 0.9
-                mx = nt.nodes.new("ShaderNodeMixShader")
-                mx.inputs[0].default_value = 0.72
-                nt.links.new(b.outputs[0], mx.inputs[1])
-                nt.links.new(em.outputs[0], mx.inputs[2])
-                nt.links.new(mx.outputs[0], outn.inputs["Surface"])
-                ob.data.materials.append(fm)
-                for i in far:
-                    mesh.polygons[i].material_index = 1
-        objs.append(ob)
+        by_lv = {}
+        for f in d["faces"]:
+            by_lv.setdefault(level_of(verts[f[0]][2]), []).append(f)
+        for lv, faces in by_lv.items():
+            used = sorted({i for f in faces for i in f})
+            remap = {o: n for n, o in enumerate(used)}
+            vv = [(verts[i][0] * S, verts[i][1] * S, verts[i][2] * S) for i in used]
+            ff = [[remap[i] for i in f] for f in faces]
+            mesh = bpy.data.meshes.new(f"{short}_{lv}")
+            mesh.from_pydata(vv, [], ff)
+            uvl = mesh.uv_layers.new(name="UVMap")
+            flat = []
+            for poly in mesh.polygons:
+                for li in poly.loop_indices:
+                    flat.extend(uvs[used[mesh.loops[li].vertex_index]])
+            uvl.data.foreach_set("uv", flat)
+            mesh.update()
+            ob = bpy.data.objects.new(f"{short}_{lv}", mesh)
+            level_collection(lv).objects.link(ob)
+            ob.data.materials.append(mat)
+            objs.append(ob)
     return objs
 
 
+def _move_to(ob, col):
+    for c in list(ob.users_collection):
+        c.objects.unlink(ob)
+    col.objects.link(ob)
+
+
 def water(sc):
-    H = 15872 * 17
-    bpy.ops.mesh.primitive_cube_add(size=1)
-    ob = bpy.context.active_object
-    ob.name = "Ocean"
-    ob.scale = (H * 2 * S, H * 2 * S, 768 * S)
-    ob.location = (0, 0, -384 * S)
+    mat = ocean_material()
+    deep = bpy.data.materials.new("deep")
+    deep.node_tree.nodes.get("Principled BSDF").inputs["Base Color"].default_value = (0.55, 0.5, 0.36, 1)
+    H = 15872 * 8
+    for lv, sz in LEVELS.items():
+        bpy.ops.mesh.primitive_cube_add(size=1)
+        ob = bpy.context.active_object
+        ob.name = f"Ocean_{lv}"
+        ob.scale = (H * 2 * S, H * 2 * S, 768 * S)
+        ob.location = (0, 0, (sz - 384) * S)
+        ob.data.materials.append(mat)
+        _move_to(ob, level_collection(lv))
+        bpy.ops.mesh.primitive_plane_add(size=1)
+        fl = bpy.context.active_object
+        fl.scale = (H * 2 * S, H * 2 * S, 1)
+        fl.location = (0, 0, (sz - 772) * S)
+        fl.data.materials.append(deep)
+        _move_to(fl, level_collection(lv))
+
+
+def ocean_material():
     mat = bpy.data.materials.new("ocean")
     nt = mat.node_tree
     nodes, links = nt.nodes, nt.links
@@ -172,16 +181,7 @@ def water(sc):
     links.new(vol.outputs[0], add.inputs[0])
     links.new(sca.outputs[0], add.inputs[1])
     links.new(add.outputs[0], out.inputs["Volume"])
-    ob.data.materials.append(mat)
-    # fond marin etendu
-    bpy.ops.mesh.primitive_plane_add(size=1)
-    fl = bpy.context.active_object
-    fl.scale = (H * 2 * S, H * 2 * S, 1)
-    fl.location = (0, 0, -772 * S)
-    m2 = bpy.data.materials.new("deep")
-    b2 = m2.node_tree.nodes.get("Principled BSDF")
-    b2.inputs["Base Color"].default_value = (0.55, 0.5, 0.36, 1)
-    fl.data.materials.append(m2)
+    return mat
 
 
 def sky_and_sun(sc, strength=0.065):
@@ -224,6 +224,7 @@ def bubbles(data):
             o = bpy.context.active_object
             o.data.materials.append(mat)
             bpy.ops.object.shade_smooth()
+            _move_to(o, level_collection(level_of(z)))
 
 
 def denoise_to_png(sc, exr_path, png_path):
@@ -312,11 +313,52 @@ def camera(sc, loc, target, lens=28):
     return ob
 
 
-SHOTS = {
-    # nom : (position, cible, focale)
-    "sabaody": ((-3200, -5200, 2300), (0, 200, 400), 26),
-    "sabaody_sol": ((-600, -1500, 160), (300, 600, 380), 20),
-}
+def load_shots():
+    """Plans de camera : shots.json + un plan automatique par ile.
+
+    Coordonnees en unites Source ; z relatif au niveau de la mer du niveau.
+    "island": cle -> x, y relatifs au centre de l'ile.
+    """
+    with open(os.path.join(BUILD, "markers.json")) as fh:
+        markers = json.load(fh)["markers"]
+    isl = {m["group"]: m for m in markers if m["kind"] == "ile"}
+    from_key = {}
+    with open(os.path.join(HERE, "shots.json")) as fh:
+        raw = json.load(fh)
+    keys = raw.pop("_iles")
+    for key, label in keys.items():
+        from_key[key] = isl[label]
+    shots = {}
+    # plan automatique de chaque ile, vu depuis le large (cote centre du niveau)
+    for key, m in from_key.items():
+        cx, cy = m["pos"][:2]
+        poly = m["poly"]
+        R = max(math.hypot(x - cx, y - cy) for x, y in poly)
+        d = math.hypot(cx, cy) or 1
+        ux, uy = -cx / d, -cy / d
+        loc = (cx + ux * R * 1.75 + uy * R * 0.55, cy + uy * R * 1.75 - ux * R * 0.55, R * 0.75)
+        shots[key] = dict(level=m["level"], loc=loc, target=(cx, cy, 350), lens=24)
+    for name, v in raw.items():
+        v = dict(v)
+        if "island" in v:
+            m = from_key[v["island"]]
+            cx, cy = m["pos"][:2]
+            v["loc"] = (cx + v["loc"][0], cy + v["loc"][1], v["loc"][2])
+            v["target"] = (cx + v["target"][0], cy + v["target"][1], v["target"][2])
+            v["level"] = m["level"]
+        shots[name] = v
+    return shots
+
+
+def use_shot(sc, shot):
+    lv = shot["level"]
+    sz = LEVELS[lv]
+    for c in bpy.data.collections:
+        if c.name.startswith("Niveau "):
+            c.hide_render = c.name != f"Niveau {lv}"
+    loc = (shot["loc"][0], shot["loc"][1], shot["loc"][2] + sz)
+    tgt = (shot["target"][0], shot["target"][1], shot["target"][2] + sz)
+    return camera(sc, loc, tgt, shot.get("lens", 24))
 
 
 def main():
@@ -331,8 +373,7 @@ def main():
     a = ap.parse_args(argv)
     with open(os.path.join(BUILD, "preview.json")) as fh:
         data = json.load(fh)
-    with open(os.path.join(HERE, "shots.json")) as fh:
-        SHOTS.update({k: tuple(v) for k, v in json.load(fh).items()})
+    SHOTS = load_shots()
     sc = reset()
     build_geometry(data, os.path.join(BUILD, "png"))
     water(sc)
@@ -366,16 +407,16 @@ def main():
     names = a.shots.split(",") if a.shots else list(SHOTS)
     if a.blend:
         for n in SHOTS:
-            ob = camera(sc, *SHOTS[n])
+            ob = use_shot(sc, SHOTS[n])
             ob.name = "Camera_" + n
-        sc.camera = bpy.data.objects["Camera_vue_ensemble"] if "Camera_vue_ensemble" in bpy.data.objects \
-            else sc.camera
+        use_shot(sc, SHOTS["niveau1"])
+        for c in bpy.data.collections:
+            c.hide_render = False
         export_blend(a.blend)
         if a.only_blend:
             return
     for n in names:
-        loc, tgt, lens = SHOTS[n]
-        camera(sc, loc, tgt, lens)
+        use_shot(sc, SHOTS[n])
         exr = os.path.join(a.out, n + ".exr")
         sc.render.filepath = exr
         bpy.ops.render.render(write_still=True)

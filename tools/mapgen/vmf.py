@@ -152,12 +152,40 @@ def _solid(out, b, ids, ind, visgroup=None, color="0 180 255"):
             f"{t}\t\t\"rotation\" \"0\"\n"
             f"{t}\t\t\"lightmapscale\" \"{lms}\"\n"
             f"{t}\t\t\"smoothing_groups\" \"0\"\n"
-            f"{t}\t}}\n"
         )
+        if f.disp is not None:
+            out.append(_dispinfo(f.disp, t + "\t\t"))
+        out.append(f"{t}\t}}\n")
     vg = f"{t}\t\t\"visgroupid\" \"{visgroup}\"\n" if visgroup else ""
     out.append(f"{t}\teditor\n{t}\t{{\n{t}\t\t\"color\" \"{color}\"\n{vg}"
                f"{t}\t\t\"visgroupshown\" \"1\"\n{t}\t\t\"visgroupautoshown\" \"1\"\n{t}\t}}\n")
     out.append(f"{t}}}\n")
+
+
+def _dispinfo(d, t):
+    n = 2 ** d["power"] + 1
+    H = d["heights"]
+    sx, sy, sz = d["start"]
+    o = [f"{t}dispinfo\n{t}{{\n",
+         f'{t}\t"power" "{d["power"]}"\n',
+         f'{t}\t"startposition" "[{sx:g} {sy:g} {sz:g}]"\n',
+         f'{t}\t"flags" "0"\n{t}\t"elevation" "0"\n{t}\t"subdiv" "0"\n']
+
+    def rows(name, fn):
+        o.append(f"{t}\t{name}\n{t}\t{{\n")
+        for i in range(n if name != "triangle_tags" else n - 1):
+            o.append(f'{t}\t\t"row{i}" "{fn(i)}"\n')
+        o.append(f"{t}\t}}\n")
+
+    rows("normals", lambda i: " ".join("0 0 1" for _ in range(n)))
+    rows("distances", lambda i: " ".join(f"{max(0.0, H[i][j]):.2f}" for j in range(n)))
+    rows("offsets", lambda i: " ".join("0 0 0" for _ in range(n)))
+    rows("offset_normals", lambda i: " ".join("0 0 1" for _ in range(n)))
+    rows("alphas", lambda i: " ".join("0" for _ in range(n)))
+    rows("triangle_tags", lambda i: " ".join("9" for _ in range(2 * (n - 1))))
+    o.append(f'{t}\tallowed_verts\n{t}\t{{\n{t}\t\t"10" "-1 -1 -1 -1 -1 -1 -1 -1 -1 -1"\n{t}\t}}\n')
+    o.append(f"{t}}}\n")
+    return "".join(o)
 
 
 def write_vmf(world, path, skyname="sky_day01_01", world_kv=None):
@@ -239,16 +267,30 @@ def export_preview(world, solved, path):
                 continue
             u, v, su, sv, shu, shv, _ = face_texinfo(f.normal, poly, f.mat)
             W, H = info["px"]
-            uv = []
-            for p in poly:
-                tu = (p @ u / su + shu) / W
-                tv = (p @ v / sv + shv) / H
-                uv.append((round(float(tu), 5), round(float(1.0 - tv), 5)))
             d = by_mat.setdefault(name, {"verts": [], "faces": [], "uvs": []})
-            base = len(d["verts"])
-            d["verts"].extend([[round(float(c), 2) for c in p] for p in poly])
-            d["faces"].append(list(range(base, base + len(poly))))
-            d["uvs"].extend(uv)
+            polys_out = [poly]
+            if f.disp is not None:
+                # grille deformee (lignes selon y, colonnes selon x)
+                n = 2 ** f.disp["power"] + 1
+                x0, y0, z0 = f.disp["start"]
+                xs = poly[:, 0]
+                ys = poly[:, 1]
+                dx = (xs.max() - xs.min()) / (n - 1)
+                dy = (ys.max() - ys.min()) / (n - 1)
+                hh = f.disp["heights"]
+                G = [[np.array([x0 + j * dx, y0 + i * dy, z0 + hh[i][j]]) for j in range(n)] for i in range(n)]
+                polys_out = [np.array([G[i][j], G[i][j + 1], G[i + 1][j + 1], G[i + 1][j]])
+                             for i in range(n - 1) for j in range(n - 1)]
+            for pp in polys_out:
+                uv = []
+                for p in pp:
+                    tu = (p @ u / su + shu) / W
+                    tv = (p @ v / sv + shv) / H
+                    uv.append((round(float(tu), 5), round(float(1.0 - tv), 5)))
+                base = len(d["verts"])
+                d["verts"].extend([[round(float(c), 2) for c in p] for p in pp])
+                d["faces"].append(list(range(base, base + len(pp))))
+                d["uvs"].extend(uv)
 
     for b in world.world:
         push(b, "world")

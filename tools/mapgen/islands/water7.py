@@ -41,7 +41,7 @@ def build(w):
     K.stairs(w, X - 80, Y - 760, X + 80, Y - 390, 260, 480, "+y")
 
     # grande fontaine
-    w.add(G.prism(X, Y, 130, 16, 480, 1350, M.MARBLE))
+    w.add(G.prism(X, Y, 130, 16, 480, 1340, M.MARBLE))
     for zb, rb in ((480, 360), (820, 260), (1120, 200)):
         w.add(G.frustum(X, Y, rb * 0.7, rb, zb, zb + 60, 16, {"top": M.WATERFALL, "default": M.MARBLE}))
     w.add(G.prism(X, Y, 150, 16, 540, 1350, M.WATERFALL))
@@ -73,12 +73,12 @@ def build(w):
         # pont vers le centre
         am = math.radians((a0 + a1) / 2)
         f = G.Frame(X, Y, 0, (a0 + a1) / 2)
-        w.add(f.box(1180, -80, Z - 14, 1530, 80, Z, {"top": M.PLANKS, "default": M.STONE}))
+        w.add(f.box(1180, -80, Z - 14, 1530, 80, Z + 3, {"top": M.PLANKS, "default": M.STONE}))
         for s in (-80, 72):
             w.add(f.box(1240, s, Z, 1470, s + 8, Z + 40, M.STONE))
         # pont entre quartiers
         g = G.Frame(X, Y, 0, a1 + 6)
-        w.add(g.box(1900, -150, Z - 14, 2060, 150, Z, {"top": M.PLANKS, "default": M.STONE}))
+        w.add(g.box(1900, -150, Z - 14, 2060, 150, Z + 3, {"top": M.PLANKS, "default": M.STONE}))
         # batiments venitiens
         for j, (rr, da, bw, bd) in enumerate(((1700, -13, 256, 256), (1700, 13, 256, 256),
                                                (2180, -14, 320, 256), (2180, 14, 320, 256))):
@@ -99,7 +99,7 @@ def build(w):
 
     # Dock 1 (chantier naval) cote ouest
     dx, dy = X - 2950, Y - 200
-    w.add(G.box(dx - 300, dy - 700, Z - 12, dx + 700, dy + 700, Z, {"top": M.PLANKS_LIGHT, "default": M.STONE}))
+    w.add(G.box(dx - 300, dy - 700, Z - 12, dx + 700, dy + 700, Z + 3, {"top": M.PLANKS_LIGHT, "default": M.STONE}))
     for i in range(5):
         for s in (-1, 1):
             w.add(G.box(dx - 280 + i * 220, dy + s * 600 - 16, Z, dx - 248 + i * 220, dy + s * 600 + 16, Z + 600,
@@ -117,7 +117,7 @@ def build(w):
 
     # Franky House
     fx, fy = X - 1500, Y - 2500
-    w.add(G.box(fx - 300, fy - 300, -128, fx + 300, fy + 300, Z, {"top": M.PLANKS, "default": M.STONE}))
+    w.add(G.box(fx - 300, fy - 300, -128, fx + 300, fy + 300, Z + 3, {"top": M.PLANKS, "default": M.STONE}))
     info = K.building(w, fx - 192, fy - 128, Z, 384, 256, floors=2, facade=M.WIN_WOOD, roof_kind="flat",
                       roof_mat=M.PLANKS, doors=(("+y", 0),), sign=M.sign_mat("franky", "FRANKY HOUSE"),
                       levels=1)
@@ -128,11 +128,11 @@ def build(w):
     a = math.atan2(ay - Y, ax - X)
     a += math.radians(-55)
     f = G.Frame(X + math.cos(a) * 2560, Y + math.sin(a) * 2560, 0, math.degrees(a))
-    w.add(f.box(-60, -220, Z - 12, 900, 220, Z, {"top": M.PLANKS_LIGHT, "default": M.STONE}))
+    w.add(f.box(-60, -220, Z - 12, 900, 220, Z + 3, {"top": M.PLANKS_LIGHT, "default": M.STONE}))
     for s in (-40, 40):
         w.add(f.box(-60, s - 4, Z, 2600, s + 4, Z + 8, M.IRON))
     for k in range(6):
-        w.add(f.box(900 + k * 280, -70, -768, 940 + k * 280, 70, Z, M.STONE))
+        w.add(f.box(900 + k * 280, -70, -768, 940 + k * 280, 70, Z - 12, M.STONE))
     w.add(f.box(900, -70, Z - 12, 2600, 70, Z, M.PLANKS_DARK))
     w.marker("Gare du Puffing Tom", f.p(300, 0, Z), "lieu")
     K.ship(w, *f.p(500, 600)[:2], math.degrees(a), 900, "pirate")

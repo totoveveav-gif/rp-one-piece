@@ -31,6 +31,10 @@ class World:
         self.visgroups = []
         self._group = "Divers"
         self.markers = []  # points d'interet (pour la carte / la doc)
+        self.hill_surfaces = []  # surfaces plates pouvant recevoir du relief
+        self._dz = 0.0      # decalage vertical du niveau en cours
+        self._dxy = (0.0, 0.0)  # decalage horizontal (ile construite autour de 0,0)
+        self._level = 0
 
     @contextlib.contextmanager
     def group(self, name):
@@ -43,22 +47,48 @@ class World:
         finally:
             self._group = old
 
+    @contextlib.contextmanager
+    def level(self, index, dz):
+        """Tout ce qui est construit dans ce bloc est deplace au niveau donne."""
+        old = (self._level, self._dz)
+        self._level, self._dz = index, float(dz)
+        try:
+            yield
+        finally:
+            self._level, self._dz = old
+
+    @contextlib.contextmanager
+    def shift(self, dx, dy):
+        """Deplace horizontalement tout ce qui est construit dans ce bloc."""
+        old = self._dxy
+        self._dxy = (old[0] + dx, old[1] + dy)
+        try:
+            yield
+        finally:
+            self._dxy = old
+
+    def _shift(self, b):
+        if self._dz or self._dxy != (0.0, 0.0):
+            b.translate((self._dxy[0], self._dxy[1], self._dz))
+        return b
+
     def add(self, *brushes):
         lst = self.detail.setdefault(self._group, [])
         for b in brushes:
             if isinstance(b, (list, tuple)):
-                lst.extend(b)
+                lst.extend(self._shift(x) for x in b)
             else:
-                lst.append(b)
+                lst.append(self._shift(b))
         return brushes[0] if len(brushes) == 1 else brushes
 
     def add_world(self, *brushes):
         for b in brushes:
-            self.world.append(b)
+            self.world.append(self._shift(b))
 
     def ent(self, classname, origin=None, brushes=None, **kv):
         d = {}
         if origin is not None:
+            origin = (origin[0] + self._dxy[0], origin[1] + self._dxy[1], origin[2] + self._dz)
             d["origin"] = fmt_vec(origin)
         for k, v in kv.items():
             k = k.rstrip("_")
@@ -67,6 +97,7 @@ class World:
             d[k] = str(v)
         if brushes is not None and not isinstance(brushes, (list, tuple)):
             brushes = [brushes]
+        brushes = [self._shift(b) for b in (brushes or [])]
         e = Entity(classname, d, list(brushes or []), self._group)
         self.entities.append(e)
         return e
@@ -84,8 +115,9 @@ class World:
                         fademindist=fade[0], fademaxdist=fade[1], fadescale=1)
 
     def marker(self, name, pos, kind="lieu"):
-        self.markers.append({"name": name, "pos": [float(p) for p in pos], "kind": kind,
-                             "group": self._group})
+        self.markers.append({"name": name, "pos": [float(pos[0]) + self._dxy[0], float(pos[1]) + self._dxy[1],
+                                                   float(pos[2]) + self._dz],
+                             "kind": kind, "group": self._group, "level": self._level})
 
     def counts(self):
         nd = sum(len(v) for v in self.detail.values())

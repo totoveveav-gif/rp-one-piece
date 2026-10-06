@@ -41,8 +41,7 @@ def gates_of_justice(w, x, y, yaw):
     memb = f.box(-3, -W / 2 + 40, -64, 3, W / 2 - 40, 1100,
                  {"+x": Mat(M.PORTAL, fit=True), "-x": Mat(M.PORTAL, fit=True), "default": M.NODRAW})
     w.ent("func_illusionary", brushes=memb, rendermode=0, renderamt=255, disableshadows=1)
-    K.gate_triggers(w, f.box(-48, -W / 2 + 40, -560, 48, W / 2 - 40, 1100, M.TRIGGER),
-                    f.box(-48, -W / 2 + 40, -560, 48, W / 2 - 40, 1100, M.TRIGGER), "enies_impel", "arrive_impel")
+    K.gate_triggers(w, f.box(-48, -W / 2 + 40, -560, 48, W / 2 - 40, 1100, M.TRIGGER), "enies_impel")
     w.light(f.p(0, 0, 500), (140, 220, 255), 3000, fifty=700, zero=2500)
 
 
@@ -51,7 +50,7 @@ def build(w):
     poly = G.blob(X, Y, R, R * 0.9, 18, 21, 0.06)
     # base : plage basse + falaise jusqu'au plateau
     low = L.terrain(w, poly, X, Y, 32, top=M.SAND, beach=M.SAND)
-    cliff = G.blob(X, Y + 150, R * 0.6, R * 0.52, 16, 22, 0.05)
+    cliff = G.blob(X, Y + 150, R * 0.6, R * 0.52, 32, 22, 0.05)
     w.add(G.poly_frustum(G.scale_poly(cliff, X, Y + 150, 1.08), cliff, 0, ZP, {"top": M.GRASS, "default": M.ROCK}))
     w.marker(name, (X, Y, 0), "ile")
     w.markers[-1]["poly"] = [list(p) for p in poly]
@@ -95,13 +94,13 @@ def build(w):
     for i in range(8):
         cx = tx - 455 + i * 130
         w.add(G.prism(cx, ty - 20, 26, 10, ZP + 48, ZP + 48 + 340, M.MARBLE))
-    w.add(G.box(tx - 500, ty - 70, ZP + 388, tx + 500, ty + 80, ZP + 420, M.MARBLE))
+    w.add(G.box(tx - 500, ty - 70, ZP + 388, tx + 500, ty + 80, ZP + 416, M.MARBLE))
     K.roof(w, "gable", tx - 520, ty - 90, tx + 520, ty + 600, ZP + 420, M.ROOF_BLUE, M.MARBLE, h=150, axis="y")
     w.marker("Tribunal d'Enies Lobby", (tx, ty, ZP), "batiment")
 
     # pont de l'hesitation + Tour de la Justice
     k0x, k0y = X - 100, Y + 1700
-    w.add(G.frustum(k0x, k0y, 520, 380, -768, ZP, 10, {"top": M.PAVING, "default": M.ROCK}))
+    w.add(G.frustum(k0x, k0y, 520, 380, -768, ZP + 4, 10, {"top": M.PAVING, "default": M.ROCK}))
     w.add(G.box(k0x - 64, ty + 600, ZP - 24, k0x + 64, k0y - 360, ZP + 6, {"top": M.PLANKS, "default": M.WOOD_BEAM}))
     for s in (-64, 56):
         w.add(G.box(k0x + s, ty + 600, ZP + 6, k0x + s + 8, k0y - 360, ZP + 46, M.WOOD_BEAM))
@@ -120,10 +119,7 @@ def build(w):
         K.flagpole(w, X - 500 + i * 300, Y - 480, ZP + 6, M.FLAG_MARINE, 320)
     K.env_cubemap(w, X, Y, ZP + 140)
 
-    # Portes de la Justice (vers Impel Down) + porte vers Marineford
+    # Portes de la Justice (vers Impel Down, au niveau 3)
     gjx, gjy = X + 400, Y + 3300
     gates_of_justice(w, gjx, gjy, 90)
     w.marker("Portes de la Justice -> Impel Down", (gjx, gjy, 0), "portail")
-    sm = M.sign_mat("to_marineford_j", "→ MARINEFORD", sub="Porte de la Justice")
-    K.sea_gate(w, X - 1900, Y + 2700, 135, sm, "arrive_marineford", "enies_marineford")
-    w.marker("Portail Enies Lobby -> Marineford", (X - 1900, Y + 2700, 0), "portail")

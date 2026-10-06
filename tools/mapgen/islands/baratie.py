@@ -84,4 +84,7 @@ def build(w):
         w.add(g.ramp(-200, s * 900, -64, 0, s * 1100, DZ - 20, "-y" if s > 0 else "+y",
                      {"top": Mat(M.STAIRS_WOOD, scale=(128, 400)), "default": M.WOOD_BEAM}))
     w.marker("Restaurant Baratie", (X, Y, DZ), "batiment")
+    # capitainerie sur la nageoire tribord
+    hx, hy, _ = g.p(-120, 640, 0)
+    K.harbor(w, KEY, hx, hy, DZ, yaw + 90, 380)
     K.env_cubemap(w, *g.p(0, 0, DZ + 120))
