@@ -120,6 +120,15 @@ def validate(world, limit=16000):
         if ext.min() < 1.0:
             errors.append(f"[{owner}] trop fin {ext}")
         solved[id(b)] = polys
+    planes = set()
+    for owner, b in all_brushes:
+        for f in b.faces:
+            n = np.round(f.normal, 4)
+            d = round(float(f.dist), 1)
+            planes.add(min(tuple(n) + (d,), tuple(-n) + (-d,)))
+    world.bsp_planes = 2 * len(planes)
+    if world.bsp_planes > 60000:
+        errors.append(f"trop de plans : ~{world.bsp_planes} plans BSP (limite moteur 65536)")
     return errors, solved
 
 
@@ -181,7 +190,8 @@ def _dispinfo(d, t):
     rows("distances", lambda i: " ".join(f"{max(0.0, H[i][j]):.2f}" for j in range(n)))
     rows("offsets", lambda i: " ".join("0 0 0" for _ in range(n)))
     rows("offset_normals", lambda i: " ".join("0 0 1" for _ in range(n)))
-    rows("alphas", lambda i: " ".join("0" for _ in range(n)))
+    A = d.get("alphas")
+    rows("alphas", lambda i: " ".join(f"{A[i][j]:g}" if A else "0" for j in range(n)))
     rows("triangle_tags", lambda i: " ".join("9" for _ in range(2 * (n - 1))))
     o.append(f'{t}\tallowed_verts\n{t}\t{{\n{t}\t\t"10" "-1 -1 -1 -1 -1 -1 -1 -1 -1 -1"\n{t}\t}}\n')
     o.append(f"{t}}}\n")
@@ -266,8 +276,11 @@ def export_preview(world, solved, path):
             if info.get("kind") == "water":
                 continue
             u, v, su, sv, shu, shv, _ = face_texinfo(f.normal, poly, f.mat)
+            alph = None
             W, H = info["px"]
             d = by_mat.setdefault(name, {"verts": [], "faces": [], "uvs": []})
+            if info.get("kind") == "blend":
+                d["blend"] = [info["base"], info["base2"]]
             polys_out = [poly]
             if f.disp is not None:
                 # grille deformee (lignes selon y, colonnes selon x)
@@ -278,10 +291,17 @@ def export_preview(world, solved, path):
                 dx = (xs.max() - xs.min()) / (n - 1)
                 dy = (ys.max() - ys.min()) / (n - 1)
                 hh = f.disp["heights"]
+                aa = f.disp.get("alphas")
                 G = [[np.array([x0 + j * dx, y0 + i * dy, z0 + hh[i][j]]) for j in range(n)] for i in range(n)]
                 polys_out = [np.array([G[i][j], G[i][j + 1], G[i + 1][j + 1], G[i + 1][j]])
                              for i in range(n - 1) for j in range(n - 1)]
-            for pp in polys_out:
+                if aa is not None:
+                    alph = [[aa[i][j], aa[i][j + 1], aa[i + 1][j + 1], aa[i + 1][j]]
+                            for i in range(n - 1) for j in range(n - 1)]
+            for k, pp in enumerate(polys_out):
+                if info.get("kind") == "blend":
+                    al = alph[k] if f.disp is not None and f.disp.get("alphas") is not None else [0] * len(pp)
+                    d.setdefault("alpha", []).extend(round(float(a) / 255, 3) for a in al)
                 uv = []
                 for p in pp:
                     tu = (p @ u / su + shu) / W

@@ -165,5 +165,61 @@
    60
   ],
   "lens": 22
+ },
+ "fuchsia_village": {
+  "island": "fuchsia",
+  "loc": [
+   1600,
+   -1800,
+   350
+  ],
+  "target": [
+   200,
+   -300,
+   120
+  ],
+  "lens": 22
+ },
+ "loguetown_port": {
+  "island": "loguetown",
+  "loc": [
+   -3200,
+   1200,
+   420
+  ],
+  "target": [
+   -1600,
+   300,
+   80
+  ],
+  "lens": 22
+ },
+ "sabaody_quais": {
+  "island": "sabaody",
+  "loc": [
+   900,
+   -4300,
+   420
+  ],
+  "target": [
+   0,
+   -2300,
+   120
+  ],
+  "lens": 22
+ },
+ "drum_village": {
+  "island": "drum",
+  "loc": [
+   2400,
+   -2600,
+   500
+  ],
+  "target": [
+   200,
+   -800,
+   150
+  ],
+  "lens": 22
  }
 }

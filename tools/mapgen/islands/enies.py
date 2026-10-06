@@ -111,15 +111,12 @@ def build(w):
         K.tower(w, k0x + s * 230, k0y + 140, ZP, 70, 1100, 10, M.WHITE, M.ROOF_BLUE, 200)
     w.marker("Tour de la Justice", (k0x, k0y, ZP), "batiment")
 
-    # palmiers, lampadaires, drapeaux
-    for i in range(10):
-        a = math.radians(i * 36 + 10)
-        K.palm(w, X + math.cos(a) * R * 0.75, Y + math.sin(a) * R * 0.66, 32, 340, seed=100 + i)
+    # lampadaires, drapeaux
     for i in range(4):
         K.flagpole(w, X - 500 + i * 300, Y - 480, ZP + 6, M.FLAG_MARINE, 320)
     K.env_cubemap(w, X, Y, ZP + 140)
 
     # Portes de la Justice (vers Impel Down, au niveau 3)
-    gjx, gjy = X + 400, Y + 3300
+    gjx, gjy = X + 400, Y + 5900
     gates_of_justice(w, gjx, gjy, 90)
     w.marker("Portes de la Justice -> Impel Down", (gjx, gjy, 0), "portail")

@@ -165,6 +165,16 @@ def paint_cycle(i):
     return PLASTER_CABINS[i % len(PLASTER_CABINS)]
 
 
+def blend(a, b):
+    """Materiau de terrain melange (WorldVertexTransition) : a -> b selon l'alpha des sommets."""
+    name = P + "blend_" + a.split("/")[1] + "_" + b.split("/")[1]
+    if name not in MATS:
+        ia = MATS[a]
+        MATS[name] = dict(gen=None, tile=ia["tile"], px=ia["px"], surf=ia["surf"], lms=64, kind="blend",
+                          base=a, base2=b, surf2=MATS[b]["surf"])
+    return name
+
+
 SIGNS = {}
 
 
@@ -298,6 +308,12 @@ def export_all(content_dir, png_dir, extra=None, only=None):
         if only and short not in only:
             continue
         if info["kind"] == "water":
+            continue
+        if info["kind"] == "blend":
+            with open(os.path.join(mdir, short + ".vmt"), "w") as fh:
+                fh.write('"WorldVertexTransition"\n{\n'
+                         f'\t"$basetexture" "{info["base"]}"\n\t"$surfaceprop" "{info["surf"]}"\n'
+                         f'\t"$basetexture2" "{info["base2"]}"\n\t"$surfaceprop2" "{info["surf2"]}"\n}}\n')
             continue
         if name in extra:
             img = extra[name]

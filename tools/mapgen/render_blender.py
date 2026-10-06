@@ -40,6 +40,30 @@ def reset():
     return sc
 
 
+def blend_mat(name, base, base2, png_dir):
+    """Materiau WorldVertexTransition : base -> base2 selon l'attribut de couleur 'alpha'."""
+    short = name.split("/", 1)[1]
+    mat = bpy.data.materials.new(short)
+    nt = mat.node_tree
+    nodes, links = nt.nodes, nt.links
+    bsdf = nodes.get("Principled BSDF")
+    bsdf.inputs["Roughness"].default_value = 0.9
+    tex = []
+    for b in (base, base2):
+        t = nodes.new("ShaderNodeTexImage")
+        t.image = bpy.data.images.load(os.path.join(png_dir, b.split("/", 1)[1] + ".png"), check_existing=True)
+        tex.append(t)
+    attr = nodes.new("ShaderNodeVertexColor")
+    attr.layer_name = "alpha"
+    mix = nodes.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    links.new(attr.outputs["Color"], mix.inputs["Factor"])
+    links.new(tex[0].outputs["Color"], mix.inputs[6])
+    links.new(tex[1].outputs["Color"], mix.inputs[7])
+    links.new(mix.outputs[2], bsdf.inputs["Base Color"])
+    return mat
+
+
 def image_mat(name, png_dir):
     short = name.split("/", 1)[1]
     mat = bpy.data.materials.new(short)
@@ -95,7 +119,8 @@ def build_geometry(data, png_dir):
         verts = d["verts"]
         uvs = d["uvs"]
         short = name.split("/", 1)[1]
-        mat = image_mat(name, png_dir)
+        alpha = d.get("alpha")
+        mat = blend_mat(name, *d["blend"], png_dir) if "blend" in d else image_mat(name, png_dir)
         by_lv = {}
         for f in d["faces"]:
             by_lv.setdefault(level_of(verts[f[0]][2]), []).append(f)
@@ -112,6 +137,13 @@ def build_geometry(data, png_dir):
                 for li in poly.loop_indices:
                     flat.extend(uvs[used[mesh.loops[li].vertex_index]])
             uvl.data.foreach_set("uv", flat)
+            if alpha is not None:
+                ca = mesh.color_attributes.new("alpha", "FLOAT_COLOR", "POINT")
+                cols = []
+                for i in used:
+                    a = alpha[i]
+                    cols.extend((a, a, a, 1.0))
+                ca.data.foreach_set("color", cols)
             mesh.update()
             ob = bpy.data.objects.new(f"{short}_{lv}", mesh)
             level_collection(lv).objects.link(ob)
@@ -129,14 +161,14 @@ def _move_to(ob, col):
 def water(sc):
     mat = ocean_material()
     deep = bpy.data.materials.new("deep")
-    deep.node_tree.nodes.get("Principled BSDF").inputs["Base Color"].default_value = (0.55, 0.5, 0.36, 1)
+    deep.node_tree.nodes.get("Principled BSDF").inputs["Base Color"].default_value = (0.78, 0.66, 0.42, 1)
     H = 15872 * 8
     for lv, sz in LEVELS.items():
         bpy.ops.mesh.primitive_cube_add(size=1)
         ob = bpy.context.active_object
         ob.name = f"Ocean_{lv}"
-        ob.scale = (H * 2 * S, H * 2 * S, 768 * S)
-        ob.location = (0, 0, (sz - 384) * S)
+        ob.scale = (H * 2 * S, H * 2 * S, 1100 * S)
+        ob.location = (0, 0, (sz - 550) * S)
         ob.data.materials.append(mat)
         _move_to(ob, level_collection(lv))
         bpy.ops.mesh.primitive_plane_add(size=1)

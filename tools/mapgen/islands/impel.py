@@ -44,9 +44,7 @@ def cell_block(w, x0, y0, z, ncells=6, cw=144, depth=176):
 
 def build(w):
     name, X, Y, R, sub = L.ISLANDS[KEY]
-    poly = G.blob(X, Y, R, R, 16, 31, 0.08)
-    land = L.terrain(w, poly, X, Y, Z, top=M.ROCK_DARK, beach=M.ROCK_DARK, under=M.ROCK_DARK,
-                     beach_frac=(0.9, 0.84, 0.82))
+    poly, land = L.island_base(w, KEY, seed=31)
     w.marker(name, (X, Y, 0), "ile")
     w.markers[-1]["poly"] = [list(p) for p in poly]
 

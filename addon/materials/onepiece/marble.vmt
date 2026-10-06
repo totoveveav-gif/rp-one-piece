@@ -1,8 +1,0 @@
-"LightmappedGeneric"
-{
-	"$basetexture" "onepiece/marble"
-	"$surfaceprop" "concrete"
-	"$envmap" "env_cubemap"
-	"$envmaptint" "[.18 .18 .18]"
-	"$normalmapalphaenvmapmask" "0"
-}

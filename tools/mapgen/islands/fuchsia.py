@@ -92,9 +92,6 @@ def build(w):
     sm = M.sign_mat("fuchsia", "VILLAGE DE FUCHSIA", sub="East Blue")
     w.add(f.box(-120, -150, Z, -104, 150, Z + 120, {"+x": Mat(sm, fit=True), "-x": Mat(sm, fit=True),
                                                     "default": M.WOOD_BEAM}))
-    for i in range(9):
-        a2 = math.radians(i * 40 + 15)
-        K.palm(w, X + math.cos(a2) * R * 0.69, Y + math.sin(a2) * R * 0.69, Z, 330, seed=160 + i)
     K.env_cubemap(w, vx, vy, Z + 128)
     for i in range(10):
         w.ent("info_target", (vx - 300 + i * 60, vy - 200, Z + 16), targetname="spawn_pirate")

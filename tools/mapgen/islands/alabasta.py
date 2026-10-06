@@ -130,8 +130,5 @@ def build(w):
                                         (-600, 2300, 520, 180), (1200, 2300, 360, 120))):
         w.add(G.boulder(X + lx, Y + ly, Z - 40, r * 1.4, r * 1.1, h * 0.9, 300 + i, M.DESERT, 36,
                         flat_bottom=Z - 20))
-    for i in range(10):
-        a = math.radians(i * 36 + 5)
-        K.palm(w, X + math.cos(a) * R * 0.68, Y + math.sin(a) * R * 0.64, Z, 360, seed=90 + i)
     K.env_cubemap(w, X, Y - 700, Z + 200)
     K.env_cubemap(w, px, py - 400, ZP + 128)

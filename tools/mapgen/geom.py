@@ -420,6 +420,7 @@ def disp_patch(x0, y0, x1, y1, z, heights, mat, power=4):
 def boulder(cx, cy, cz, rx, ry, rz, seed, spec, n=28, flat_bottom=None):
     """Rocher organique : enveloppe convexe de points sur un ellipsoide bosselé."""
     rng = np.random.default_rng(seed)
+    n = min(n, 18)   # limite le nombre de faces (budget du moteur)
     pts = []
     for _ in range(n):
         v = rng.normal(size=3)

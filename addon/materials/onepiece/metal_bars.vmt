@@ -1,8 +1,0 @@
-"LightmappedGeneric"
-{
-	"$basetexture" "onepiece/metal_bars"
-	"$surfaceprop" "metal"
-	"$alphatest" "1"
-	"$alphatestreference" "0.5"
-	"$nocull" "1"
-}

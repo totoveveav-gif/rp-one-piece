@@ -195,3 +195,46 @@ def coplanar_tops(world, solved, min_area=400):
                     out.append(f"surfaces superposees z={z} ({lst[i][0]}) {lst[i][1]} / {lst[j][1]} "
                                f"aire={_area(inter):.0f} pres de {inter[0][0]:.0f},{inter[0][1]:.0f}")
     return out
+
+
+def terrain_checks(world):
+    """Le relief ne doit pas recouvrir portes, spawns, arrivees ; l'eau doit etre profonde pour les bateaux."""
+    from . import layout as L
+    isl = getattr(world, "terrain", {})
+    problems = []
+
+    def ground(x, y, z):
+        for key, it in isl.items():
+            dz = L.sea_z(L.ISLAND_LEVEL[key])
+            if not (dz - 1100 < z < dz + L.CEIL):
+                continue
+            x0, y0, x1, y1 = it.bounds()
+            if x0 <= x <= x1 and y0 <= y <= y1:
+                return float(it.height(np.array([x]), np.array([y]))[0]) + dz
+        return None
+
+    for e in world.entities:
+        cls = e.classname
+        name = e.kv.get("targetname", "")
+        if cls == "func_door_rotating":
+            lo, hi = e.brushes[0].bbox
+            thin = int(np.argmin(hi - lo))
+            c = (lo + hi) / 2
+            for s in (-1, 1):
+                p = c.copy()
+                p[thin] += s * 60
+                g = ground(p[0], p[1], lo[2])
+                if g is not None and g > lo[2] + 14:
+                    problems.append(f"relief devant une porte @ {c.round()} ({g - lo[2]:.0f} unites)")
+        elif "origin" in e.kv and (cls in ("info_player_start", "info_teleport_destination")
+                                   or name.startswith(("boat_spawn_", "spawn_"))):
+            x, y, z = (float(v) for v in e.kv["origin"].split())
+            g = ground(x, y, z)
+            if g is None:
+                continue
+            if name.startswith(("boat_spawn_", "arrive_")):
+                if g > z - 150:
+                    problems.append(f"eau trop peu profonde pour {name or cls} @ {x:.0f},{y:.0f}")
+            elif g > z + 4:
+                problems.append(f"{cls} {name} enterre @ {x:.0f},{y:.0f} ({g - z:.0f} unites)")
+    return problems

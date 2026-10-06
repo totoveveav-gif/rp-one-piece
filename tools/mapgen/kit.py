@@ -378,24 +378,23 @@ def lamp(w, x, y, z, color=(255, 214, 150), bright=220):
 # Vegetation
 # ---------------------------------------------------------------------------
 
-def palm(w, x, y, z, h=360, seed=0, lean=None):
+def palm(w, x, y, z, h=360, seed=0, lean=None, fronds=4):
     rng = np.random.default_rng(seed)
     if lean is None:
         a = rng.uniform(0, 2 * math.pi)
         lean = (math.cos(a) * h * 0.18, math.sin(a) * h * 0.18)
     top = np.array([x + lean[0], y + lean[1], z + h])
-    w.add(G.cylinder((x, y, z - 16), top, 16, 8, M.BARK, r1=11))
-    n = 6
+    w.add(G.cylinder((x, y, z - 16), top, 16, 6, M.BARK, r1=11))
+    n = fronds
     rot0 = rng.uniform(0, 360)
     for i in range(n):
         a = math.radians(rot0 + i * 360 / n + rng.uniform(-12, 12))
         d = np.array([math.cos(a), math.sin(a), 0])
         p = np.array([-d[1], d[0], 0])
         L = rng.uniform(150, 200)
-        pts = [top + p * 8, top - p * 8,
-               top + d * L * 0.5 + p * 26 + [0, 0, 22], top + d * L * 0.5 - p * 26 + [0, 0, 22],
+        pts = [top, top + d * L * 0.5 + p * 28 + [0, 0, 22], top + d * L * 0.5 - p * 28 + [0, 0, 22],
                top + d * L + [0, 0, -L * 0.42]]
-        pts = pts + [q + [0, 0, -5] for q in pts]
+        pts = pts + [q + [0, 0, -6] for q in pts]
         w.add(G.brush(pts, M.PALM))
     w.add(G.prism(top[0], top[1], 16, 6, top[2] - 18, top[2] + 6, M.PALM))
 
@@ -408,7 +407,7 @@ def round_tree(w, x, y, z, h=300, r=120, mat=M.LEAVES, trunk=M.BARK, sides=12):
 def pine(w, x, y, z, h=420, r=130, mat=M.PINE):
     w.add(G.cylinder((x, y, z - 16), (x, y, z + h * 0.3), 14, 6, M.BARK, r1=10))
     for k, (a, b, rr) in enumerate(((0.2, 0.55, 1.0), (0.45, 0.8, 0.75), (0.68, 1.0, 0.5))):
-        w.add(G.frustum(x, y, r * rr, 0, z + h * a, z + h * b, 12, mat, rot=k * 22))
+        w.add(G.frustum(x, y, r * rr, 0, z + h * a, z + h * b, 8, mat, rot=k * 22))
 
 
 def bush(w, x, y, z, r=48, mat=M.LEAVES):
@@ -434,13 +433,13 @@ def mangrove(w, x, y, z, r=200, h=1300, canopy=900, grove=None, face_yaw=-90):
     rng = np.random.default_rng(int(abs(x) + abs(y)) % 9973)
     w.add(G.boulder(x, y, z + h * 1.06, canopy * 0.78, canopy * 0.78, h * 0.16, int(rng.integers(1 << 30)),
                     M.CANOPY, 36))
-    for i in range(6):
+    for i in range(4):
         a = rng.uniform(0, 2 * math.pi)
         d = canopy * rng.uniform(0.45, 0.7)
         rr = canopy * rng.uniform(0.32, 0.45)
         bx, by = x + math.cos(a) * d, y + math.sin(a) * d
         zb = z + h * rng.uniform(0.9, 1.02) + i * 7
-        w.add(G.boulder(bx, by, zb + rr * 0.3, rr, rr, rr * 0.42, int(rng.integers(1 << 30)), M.CANOPY, 30))
+        w.add(G.boulder(bx, by, zb + rr * 0.3, rr, rr, rr * 0.42, int(rng.integers(1 << 30)), M.CANOPY, 12))
     if grove is not None:
         mat = M.grove_mat(grove)
         f = G.Frame(x, y, z, face_yaw)
@@ -704,8 +703,6 @@ def quay_terrain(w, poly, z_top, top=M.PAVING, side=M.STONE_GREY, flare=1.05):
     cy = sum(p[1] for p in poly) / len(poly)
     base = G.scale_poly(poly, cx, cy, flare)
     w.add(G.poly_frustum(base, poly, -768, z_top, {"top": top, "default": side}))
-    from .relief import register
-    register(w, poly, z_top, top)
 
 
 def water_steps(w, x0, y0, x1, y1, z0, z1, rise, mat=M.STONE_GREY):

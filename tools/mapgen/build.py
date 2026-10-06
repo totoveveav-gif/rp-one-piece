@@ -38,7 +38,7 @@ def level_shell(w, lv):
     w.add_world(G.box(H, -H - t, bot, H + t, H + t, top, M.SKY))
     w.add_world(G.box(-H, -H - t, bot, H, -H, top, M.SKY))
     w.add_world(G.box(-H, H, bot, H, H + t, top, M.SKY))
-    w.add_world(G.box(-H, -H, bot, H, H, L.SEA_FLOOR, {"top": M.SEAFLOOR, "default": M.NODRAW}))
+    w.add_world(G.box(-H, -H, bot, H, H, L.SEA_FLOOR, {"top": M.SAND, "default": M.NODRAW}))
     w.add_world(G.box(-H, -H, L.SEA_FLOOR, H, H, 0, {"top": M.WATER, "default": M.NODRAW}))
     # quelques recifs pour animer la navigation
     import numpy as np
@@ -177,15 +177,17 @@ def build(args):
             mod.build(w)
     if not args.islands:
         L.build_harbors(w)
-    from .relief import add_hills
-    print("collines (displacements):", add_hills(w))
+    from .terrain import build_all
+    for k, (n, t) in build_all(w).items():
+        print(f"  terrain {k}: {n} carreaux de relief, {t} arbres")
     print("construction", round(time.time() - t0, 1), "s", w.counts())
     errors, solved = validate(w)
     for e in errors[:40]:
         print("ERREUR", e)
+    print("plans BSP estimes:", getattr(w, "bsp_planes", "?"), "/ 65536")
     print("erreurs:", len(errors))
-    from .checks import coplanar_tops, run as run_checks
-    probs = run_checks(w) + coplanar_tops(w, solved)
+    from .checks import coplanar_tops, run as run_checks, terrain_checks
+    probs = run_checks(w) + coplanar_tops(w, solved) + terrain_checks(w)
     for pb in probs:
         print("JOUABILITE", pb)
     print("problemes de jouabilite:", len(probs))

@@ -1,6 +1,8 @@
 """Disposition generale : niveaux (mers), iles, passages entre niveaux, capitaineries."""
 import math
 
+import numpy as np
+
 from . import geom as G
 from . import kit as K
 from . import materials as M
@@ -21,17 +23,43 @@ LEVELS = {
 
 # cle : (nom affiche, centre x, centre y, rayon du socle, sous-titre)
 ISLANDS = {
-    "fuchsia": ("Village de Fuchsia", -9500, -8000, 2600, "East Blue"),
-    "baratie": ("Baratie", -1800, 6200, 1100, "Restaurant flottant"),
-    "loguetown": ("Loguetown", 8800, -6500, 3300, "La ville du commencement et de la fin"),
-    "drum": ("Royaume de Drum", -9500, 8500, 3200, "Ile d'hiver"),
-    "water7": ("Water Seven", -9600, -8400, 3600, "La cite de l'eau"),
-    "alabasta": ("Alabasta", 9600, -8600, 3600, "Royaume du desert"),
-    "enies": ("Enies Lobby", 9000, 7000, 2600, "Ile judiciaire du Gouvernement"),
-    "sabaody": ("Archipel de Sabaody", -9000, -8200, 3200, "Porte du Nouveau Monde"),
-    "marineford": ("Marineford", -7600, 6400, 4200, "Quartier General de la Marine"),
-    "impel": ("Impel Down", 10200, -9200, 1900, "Prison sous-marine"),
-    "wano": ("Pays de Wano", 9400, 6600, 3200, "Capitale des Fleurs"),
+    "fuchsia": ("Village de Fuchsia", -7600, -6200, 2600, "East Blue"),
+    "baratie": ("Baratie", 0, 7200, 1100, "Restaurant flottant"),
+    "loguetown": ("Loguetown", 7400, -5200, 3300, "La ville du commencement et de la fin"),
+    "drum": ("Royaume de Drum", -8000, 7200, 3200, "Ile d'hiver"),
+    "water7": ("Water Seven", -8200, -7400, 3600, "La cite de l'eau"),
+    "alabasta": ("Alabasta", 8000, -7200, 3600, "Royaume du desert"),
+    "enies": ("Enies Lobby", 8400, 6600, 2600, "Ile judiciaire du Gouvernement"),
+    "sabaody": ("Archipel de Sabaody", -8200, -7600, 3200, "Porte du Nouveau Monde"),
+    "marineford": ("Marineford", -7600, 4800, 4200, "Quartier General de la Marine"),
+    "impel": ("Impel Down", 8800, -8400, 1900, "Prison sous-marine"),
+    "wano": ("Pays de Wano", 8200, 5600, 3200, "Capitale des Fleurs"),
+}
+
+# Grandes iles en relief (terrain.py). big = rayon de l'ile entiere ;
+# peaks = (angle depuis l'arriere de l'ile, distance, hauteur, largeur) ;
+# open = directions supplementaires ou la cote reste celle de la ville (ports).
+SHAPES = {
+    "fuchsia": dict(big=6200, biome="herbe", seed=11, mountains=320, hills=110, forest=0.75,
+                    peaks=[(10, 3700, 1250, 1500), (-55, 3600, 600, 900)], max_trees=70),
+    "loguetown": dict(big=6000, biome="herbe", seed=12, mountains=260, hills=100, forest=0.5,
+                      peaks=[(25, 3900, 650, 1300)], max_trees=65),
+    "drum": dict(big=5700, biome="neige", seed=13, mountains=420, hills=120, forest=0.8,
+                 peaks=[(35, 3600, 900, 1100), (-40, 3900, 650, 900)], max_trees=70),
+    "water7": dict(big=5000, biome="herbe", seed=14, custom_core=2750, mountains=200, hills=80, forest=0.7,
+                   peaks=[(0, 3800, 450, 1000)], max_trees=80),
+    "alabasta": dict(big=6200, biome="desert", seed=15, mountains=380, hills=150, forest=0.35,
+                     peaks=[(0, 4200, 700, 1500), (70, 3900, 450, 900)], max_trees=45),
+    "enies": dict(big=4400, biome="herbe", seed=16, custom_core=2300, land=32, mountains=260, hills=80, open=[-90],
+                  forest=0.4, peaks=[(0, 3300, 500, 900)], max_trees=70),
+    "sabaody": dict(big=5800, biome="tropical", seed=17, mountains=160, hills=90, forest=0.65, open=[-90],
+                    peaks=[(0, 3600, 380, 1400)], max_trees=120),
+    "marineford": dict(big=5700, biome="herbe", seed=18, custom_core=3900, land=64, mountains=300, hills=90,
+                       forest=0.75, lobes=[(90, 75)], peaks=[(0, 4700, 600, 1000)], max_trees=90),
+    "impel": dict(big=4600, biome="roche", seed=19, land=64, mountains=650, hills=120, forest=0,
+                  peaks=[(0, 2900, 700, 900), (60, 3000, 500, 700)]),
+    "wano": dict(big=6100, biome="wano", seed=20, mountains=380, hills=110, forest=0.7,
+                 peaks=[(0, 3900, 1650, 1250), (-60, 3900, 600, 800)], max_trees=70),
 }
 ISLAND_LEVEL = {"fuchsia": 1, "baratie": 1, "loguetown": 1,
                 "drum": 2, "water7": 2, "alabasta": 2, "enies": 2,
@@ -100,17 +128,23 @@ def terrain(w, poly, cx, cy, land_z=LAND_Z, top=M.GRASS, beach=M.SAND, under=M.S
     w.add(G.poly_frustum(poly, p1, SEA_FLOOR, -96, under))
     w.add(G.poly_frustum(p1, p2, -96, 16, beach))
     w.add(G.poly_frustum(p2, p3, 16, land_z, {"top": top, "default": beach}))
-    from .relief import register
-    register(w, p3, land_z, top)
     return p3
 
 
 def island_base(w, key, seed, land_z=LAND_Z, top=M.GRASS, beach=M.SAND, sides=22, jitter=0.07,
                 rx=None, ry=None, rot=0.0):
+    """Le sol de l'ile est genere par terrain.py (relief en displacements).
+    Renvoie le contour de l'ile (pour la carte) et le contour de la ville."""
     _, cx, cy, R, _ = ISLANDS[key]
-    poly = G.blob(cx, cy, rx or R, ry or R, sides, seed, jitter, rot)
-    land = terrain(w, poly, cx, cy, land_z, top, beach)
-    return poly, land
+    return coast_poly(key), G.blob(cx, cy, R * 0.71, R * 0.71, sides, seed, 0.0, rot)
+
+
+def coast_poly(key, n=72):
+    from .terrain import Island
+    isl = Island(key)
+    ths = np.linspace(-math.pi, math.pi, n, endpoint=False)
+    rc = isl.coast(ths)
+    return [(isl.cx + math.cos(t) * r, isl.cy + math.sin(t) * r) for t, r in zip(ths, rc)]
 
 
 # capitaineries : position explicite (x, y, z, yaw, ponton) ou placement automatique
@@ -137,6 +171,7 @@ def _harbor_free(S, x, y, z, yaw, pier):
 
 def build_harbors(w):
     from .checks import Solids
+    from .terrain import Island
     for k in ISLANDS:
         if k == "baratie":
             continue  # construit par l'ile (sur la nageoire)
@@ -145,26 +180,37 @@ def build_harbors(w):
         if k in HARBOR_OVERRIDE:
             x, y, z, yaw, pier = HARBOR_OVERRIDE[k]()
         else:
-            S = Solids(w)
+            S = _Shifted(Solids(w), dz)
             cx, cy = center(k)
             R = radius(k)
-            ax, ay, _, _ = arrival_point(k)
-            base = math.atan2(ay - cy, ax - cx)
-            ry = 0.9 if k == "loguetown" else 1.0
-            pier = R * 0.28
-            z = {"impel": 64}.get(k, LAND_Z)
+            spec = SHAPES.get(k, {})
+            z = spec.get("land", LAND_Z)
+            isl = Island(k) if k in SHAPES and not spec.get("custom_core") else None
             choice = None
-            for sh in sorted(range(-170, 180, 8), key=abs):
-                a = base + math.radians(sh)
-                x, y = cx + math.cos(a) * R * 0.6, cy + math.sin(a) * R * 0.6 * ry
-                # le test se fait dans les coordonnees du monde (niveau deja decale)
-                S_ok = _harbor_free(_Shifted(S, dz), x, y, z, math.degrees(a), pier)
-                if S_ok:
-                    choice = (x, y, math.degrees(a))
-                    break
+            if isl is not None:
+                # sur la cote de la ville (secteurs ouverts), ponton vers le large
+                for sh in sorted(range(-44, 46, 4), key=abs):
+                    for base in isl.opens:
+                        a = base + math.radians(sh)
+                        rc = float(isl.coast(np.array([a]))[0])
+                        x, y = cx + math.cos(a) * (rc - 380), cy + math.sin(a) * (rc - 380)
+                        if _harbor_free(S, x, y, z, math.degrees(a), 700):
+                            choice = (x, y, math.degrees(a), 700)
+                            break
+                    if choice:
+                        break
+            else:
+                ax, ay, _, _ = arrival_point(k)
+                base = math.atan2(ay - cy, ax - cx)
+                for sh in sorted(range(-170, 180, 8), key=abs):
+                    a = base + math.radians(sh)
+                    x, y = cx + math.cos(a) * R * 0.6, cy + math.sin(a) * R * 0.6
+                    if _harbor_free(S, x, y, z, math.degrees(a), R * 0.28):
+                        choice = (x, y, math.degrees(a), R * 0.28)
+                        break
             if choice is None:
                 raise RuntimeError(f"pas de place pour la capitainerie de {k}")
-            x, y, yaw = choice
+            x, y, yaw, pier = choice
         with w.level(lv, dz), w.group(ISLANDS[k][0]):
             K.harbor(w, k, x, y, z, yaw, pier)
 
