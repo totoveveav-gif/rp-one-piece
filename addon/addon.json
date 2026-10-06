@@ -1,0 +1,12 @@
+{
+	"title"		:	"rp_onepiece_grandline - Map RP One Piece",
+	"type"		:	"map",
+	"tags"		:	[ "roleplay", "scenic" ],
+	"ignore"	:
+	[
+		"*.psd",
+		"*.vmf",
+		"*.txt",
+		"*.md"
+	]
+}

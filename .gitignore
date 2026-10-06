@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+tools/mapgen/build/
+*.exr
+maps/src/*.bsp
+maps/src/*.prt
+maps/src/*.lin
+maps/src/*.log
+maps/src/*.vmx

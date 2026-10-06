@@ -1,0 +1,387 @@
+"""Rendu Blender (Cycles) de la map a partir de build/preview.json.
+
+    python tools/mapgen/render_blender.py [--shots nom1,nom2] [--samples 64] [--res 1600x900]
+    (necessite le module bpy :  pip install bpy)
+
+La geometrie est exactement celle des brushes du VMF (meme decoupe, memes UV),
+on voit donc dans Blender ce qu'on aura dans GMod.
+"""
+import argparse
+import json
+import math
+import os
+import sys
+
+import bpy
+from mathutils import Vector
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+BUILD = os.path.join(HERE, "build")
+ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
+S = 0.0254           # 1 unite Source = 1 pouce
+SKY_Z = 10240
+SKY_SCALE = 16
+SUN_YAW = 50
+SUN_PITCH = -50
+
+ROUGH = {"marble": 0.25, "gold": 0.3, "metal_plates": 0.45, "iron": 0.4, "glow_cyan": 1, "paint_red": 0.5,
+         "paint_marine_blue": 0.5, "paint_white": 0.5, "paint_torii": 0.45, "hull_white": 0.6}
+METAL = {"gold": 1.0, "metal_plates": 0.6, "iron": 0.7, "metal_bars": 0.6}
+HAZE_COLOR = (0.62, 0.78, 0.95)
+HAZE_LEVEL = 1.0
+HAZE_MAX = 0.85
+EMIT = {"portal_swirl": 4.0, "glow_cyan": 6.0, "glow_warm": 4.0}
+
+
+def reset():
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    sc = bpy.context.scene
+    sc.render.engine = "CYCLES"
+    sc.cycles.device = "CPU"
+    sc.unit_settings.system = "METRIC"
+    return sc
+
+
+def image_mat(name, png_dir):
+    short = name.split("/", 1)[1]
+    mat = bpy.data.materials.new(short)
+    nt = mat.node_tree
+    nodes, links = nt.nodes, nt.links
+    bsdf = nodes.get("Principled BSDF")
+    if bsdf is None:
+        bsdf = nodes.new("ShaderNodeBsdfPrincipled")
+        out = nodes.new("ShaderNodeOutputMaterial")
+        links.new(bsdf.outputs[0], out.inputs[0])
+    path = os.path.join(png_dir, short + ".png")
+    if os.path.exists(path):
+        tex = nodes.new("ShaderNodeTexImage")
+        tex.image = bpy.data.images.load(path, check_existing=True)
+        tex.interpolation = "Linear"
+        links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
+        if short in EMIT:
+            links.new(tex.outputs["Color"], bsdf.inputs["Emission Color"])
+            bsdf.inputs["Emission Strength"].default_value = EMIT[short]
+        if short == "metal_bars":
+            links.new(tex.outputs["Alpha"], bsdf.inputs["Alpha"])
+        if short == "waterfall":
+            links.new(tex.outputs["Color"], bsdf.inputs["Emission Color"])
+            bsdf.inputs["Emission Strength"].default_value = 0.4
+    bsdf.inputs["Roughness"].default_value = ROUGH.get(short, 0.85)
+    bsdf.inputs["Metallic"].default_value = METAL.get(short, 0.0)
+    if short == "portal_swirl":
+        bsdf.inputs["Alpha"].default_value = 0.75
+    return mat
+
+
+def build_geometry(data, png_dir):
+    objs = []
+    for name, d in data["materials"].items():
+        verts = d["verts"]
+        faces = d["faces"]
+        uvs = d["uvs"]
+        short = name.split("/", 1)[1]
+        # skybox 3D -> echelle reelle (sauf fond marin/eau du skybox)
+        sky = [v[2] > 8000 for v in verts]
+        if any(sky):
+            keep_f = []
+            for f in faces:
+                if verts[f[0]][2] > 8000 and short in ("seafloor",):
+                    continue
+                keep_f.append(f)
+            faces = keep_f
+        vv = []
+        for v in verts:
+            if v[2] > 8000:
+                vv.append(((v[0]) * SKY_SCALE * S, (v[1]) * SKY_SCALE * S, (v[2] - SKY_Z) * SKY_SCALE * S))
+            else:
+                vv.append((v[0] * S, v[1] * S, v[2] * S))
+        mesh = bpy.data.meshes.new(short)
+        mesh.from_pydata(vv, [], faces)
+        uvl = mesh.uv_layers.new(name="UVMap")
+        flat = []
+        for poly in mesh.polygons:
+            for li in poly.loop_indices:
+                flat.extend(uvs[mesh.loops[li].vertex_index])
+        uvl.data.foreach_set("uv", flat)
+        mesh.update()
+        ob = bpy.data.objects.new(short, mesh)
+        bpy.context.scene.collection.objects.link(ob)
+        mat = image_mat(name, png_dir)
+        ob.data.materials.append(mat)
+        if any(v[2] > 8000 for v in verts):
+            # partie lointaine (skybox 3D) : objet separe avec perspective aerienne
+            far = [i for i, f in enumerate(mesh.polygons) if verts[faces[i][0]][2] > 8000]
+            if far:
+                fm = mat.copy()
+                fm.name = short + "_loin"
+                nt = fm.node_tree
+                b = nt.nodes.get("Principled BSDF")
+                outn = [n for n in nt.nodes if n.type == "OUTPUT_MATERIAL"][0]
+                em = nt.nodes.new("ShaderNodeEmission")
+                em.inputs["Color"].default_value = (*HAZE_COLOR, 1)
+                em.inputs["Strength"].default_value = 0.9
+                mx = nt.nodes.new("ShaderNodeMixShader")
+                mx.inputs[0].default_value = 0.72
+                nt.links.new(b.outputs[0], mx.inputs[1])
+                nt.links.new(em.outputs[0], mx.inputs[2])
+                nt.links.new(mx.outputs[0], outn.inputs["Surface"])
+                ob.data.materials.append(fm)
+                for i in far:
+                    mesh.polygons[i].material_index = 1
+        objs.append(ob)
+    return objs
+
+
+def water(sc):
+    H = 15872 * 17
+    bpy.ops.mesh.primitive_cube_add(size=1)
+    ob = bpy.context.active_object
+    ob.name = "Ocean"
+    ob.scale = (H * 2 * S, H * 2 * S, 768 * S)
+    ob.location = (0, 0, -384 * S)
+    mat = bpy.data.materials.new("ocean")
+    nt = mat.node_tree
+    nodes, links = nt.nodes, nt.links
+    for n in list(nodes):
+        nodes.remove(n)
+    out = nodes.new("ShaderNodeOutputMaterial")
+    glass = nodes.new("ShaderNodeBsdfPrincipled")
+    glass.inputs["Base Color"].default_value = (1, 1, 1, 1)
+    glass.inputs["Transmission Weight"].default_value = 1.0
+    glass.inputs["Roughness"].default_value = 0.03
+    glass.inputs["IOR"].default_value = 1.333
+    # vagues
+    tc = nodes.new("ShaderNodeTexCoord")
+    noise = nodes.new("ShaderNodeTexNoise")
+    noise.inputs["Scale"].default_value = 1.6
+    noise.inputs["Detail"].default_value = 6
+    links.new(tc.outputs["Object"], noise.inputs["Vector"])
+    bump = nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.08
+    bump.inputs["Distance"].default_value = 0.02
+    links.new(noise.outputs["Fac"], bump.inputs["Height"])
+    links.new(bump.outputs["Normal"], glass.inputs["Normal"])
+    links.new(glass.outputs[0], out.inputs["Surface"])
+    vol = nodes.new("ShaderNodeVolumeAbsorption")
+    vol.inputs["Color"].default_value = (0.30, 0.80, 0.82, 1)
+    vol.inputs["Density"].default_value = 0.09
+    sca = nodes.new("ShaderNodeVolumeScatter")
+    sca.inputs["Color"].default_value = (0.35, 0.88, 0.92, 1)
+    sca.inputs["Density"].default_value = 0.03
+    add = nodes.new("ShaderNodeAddShader")
+    links.new(vol.outputs[0], add.inputs[0])
+    links.new(sca.outputs[0], add.inputs[1])
+    links.new(add.outputs[0], out.inputs["Volume"])
+    ob.data.materials.append(mat)
+    # fond marin etendu
+    bpy.ops.mesh.primitive_plane_add(size=1)
+    fl = bpy.context.active_object
+    fl.scale = (H * 2 * S, H * 2 * S, 1)
+    fl.location = (0, 0, -772 * S)
+    m2 = bpy.data.materials.new("deep")
+    b2 = m2.node_tree.nodes.get("Principled BSDF")
+    b2.inputs["Base Color"].default_value = (0.55, 0.5, 0.36, 1)
+    fl.data.materials.append(m2)
+
+
+def sky_and_sun(sc, strength=0.065):
+    wd = bpy.data.worlds.new("Ciel")
+    sc.world = wd
+    nt = wd.node_tree
+    nodes, links = nt.nodes, nt.links
+    bg = nodes.get("Background") or nodes.new("ShaderNodeBackground")
+    out = nodes.get("World Output") or nodes.new("ShaderNodeOutputWorld")
+    sky = nodes.new("ShaderNodeTexSky")
+    sky.sky_type = "MULTIPLE_SCATTERING"
+    sky.sun_elevation = math.radians(-SUN_PITCH)
+    # azimut du soleil = 90 deg - rotation (verifie par test d'ombre)
+    sky.sun_rotation = math.radians(90 - (SUN_YAW + 180))
+    sky.altitude = 200
+    sky.air_density = 1.0
+    sky.aerosol_density = 1.6
+    sky.sun_intensity = 1.0
+    sky.sun_disc = True
+    links.new(sky.outputs[0], bg.inputs[0])
+    bg.inputs[1].default_value = strength
+    links.new(bg.outputs[0], out.inputs[0])
+
+
+def bubbles(data):
+    mat = bpy.data.materials.new("bulle")
+    b = mat.node_tree.nodes.get("Principled BSDF")
+    b.inputs["Transmission Weight"].default_value = 1.0
+    b.inputs["Roughness"].default_value = 0.0
+    b.inputs["IOR"].default_value = 1.05
+    b.inputs["Thin Wall"].default_value = True
+    b.inputs["Base Color"].default_value = (0.85, 0.95, 1.0, 1)
+    b.inputs["Thin Film Thickness"].default_value = 450
+    for e in data["entities"]:
+        if e["class"] == "prop_dynamic" and "sphere" in e.get("model", ""):
+            x, y, z = (float(c) for c in e["origin"].split())
+            r = 89 if "375" in e["model"] else 47
+            bpy.ops.mesh.primitive_uv_sphere_add(radius=r * S, location=(x * S, y * S, z * S),
+                                                 segments=24, ring_count=12)
+            o = bpy.context.active_object
+            o.data.materials.append(mat)
+            bpy.ops.object.shade_smooth()
+
+
+def denoise_to_png(sc, exr_path, png_path):
+    """Debruitage Intel OIDN (couleur + albedo + normales) puis export PNG
+    avec la gestion des couleurs de la scene (AgX)."""
+    import numpy as np
+    import OpenEXR
+    import pyoidn
+
+    f = OpenEXR.File(exr_path)
+    parts = {p.name().split(".", 1)[1]: p for p in f.parts}
+
+    def ch(part, keys):
+        c = parts[part].channels
+        if len(keys) == 1:
+            return np.ascontiguousarray(c[keys[0]].pixels[..., :3], dtype=np.float32)
+        return np.ascontiguousarray(np.stack([c[k].pixels for k in keys], -1), dtype=np.float32)
+
+    color = ch("Combined", ["ViewLayer.Combined"])
+    albedo = ch("Denoising Albedo", ["ViewLayer.Denoising Albedo"])
+    normal = ch("Denoising Normal", ["ViewLayer.Denoising Normal.X", "ViewLayer.Denoising Normal.Y",
+                                     "ViewLayer.Denoising Normal.Z"])
+    # brume atmospherique (passe Mist), le ciel n'est pas touche
+    if "Mist" in parts:
+        mk = list(parts["Mist"].channels)[0]
+        mist = np.asarray(parts["Mist"].channels[mk].pixels, np.float32)
+        depth = np.asarray(parts["Denoising Depth"].channels["ViewLayer.Denoising Depth.Z"].pixels, np.float32)
+        geo = (depth > 0) & (depth < 1e7)
+        k = (np.clip(mist, 0, 1) * HAZE_MAX * geo)[..., None]
+        haze = np.array(HAZE_COLOR, np.float32) * HAZE_LEVEL
+        color = np.ascontiguousarray(color * (1 - k) + haze * k, dtype=np.float32)
+    out = np.zeros_like(color)
+    dev = pyoidn.Device()
+    dev.commit()
+    flt = pyoidn.Filter(dev, "RT")
+    flt.set_image(pyoidn.OIDN_IMAGE_COLOR, color, pyoidn.OIDN_FORMAT_FLOAT3)
+    flt.set_image(pyoidn.OIDN_IMAGE_ALBEDO, albedo, pyoidn.OIDN_FORMAT_FLOAT3)
+    flt.set_image(pyoidn.OIDN_IMAGE_NORMAL, normal, pyoidn.OIDN_FORMAT_FLOAT3)
+    flt.set_image(pyoidn.OIDN_IMAGE_OUTPUT, out, pyoidn.OIDN_FORMAT_FLOAT3)
+    flt.set_bool("hdr", True)
+    flt.commit()
+    flt.execute()
+    h, w = out.shape[:2]
+    rgba = np.concatenate([out, np.ones((h, w, 1), np.float32)], -1)
+    img = bpy.data.images.new("debruite", w, h, float_buffer=True)
+    img.pixels.foreach_set(np.flipud(rgba).ravel())
+    ims = sc.render.image_settings
+    ims.media_type = "IMAGE"
+    ims.file_format = "PNG"
+    img.save_render(png_path, scene=sc)
+    ims.media_type = "MULTI_LAYER_IMAGE"
+    ims.file_format = "OPEN_EXR_MULTILAYER"
+    ims.color_depth = "32"
+    bpy.data.images.remove(img)
+    os.remove(exr_path)
+
+
+def export_blend(path):
+    """Sauvegarde la scene ; textures copiees en JPG a cote du .blend (chemins relatifs)."""
+    d = os.path.dirname(os.path.abspath(path))
+    tex = os.path.join(d, "textures")
+    os.makedirs(tex, exist_ok=True)
+    from PIL import Image as PImage
+    for img in bpy.data.images:
+        src = bpy.path.abspath(img.filepath)
+        if not img.filepath or not os.path.exists(src):
+            continue
+        name = os.path.splitext(os.path.basename(src))[0] + ".jpg"
+        PImage.open(src).convert("RGB").save(os.path.join(tex, name), quality=88)
+        img.filepath = "//textures/" + name
+        img.reload()
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(path), compress=True, relative_remap=False)
+
+
+def camera(sc, loc, target, lens=28):
+    cam = bpy.data.cameras.new("cam")
+    cam.lens = lens
+    cam.clip_start = 0.5
+    cam.clip_end = 20000
+    ob = bpy.data.objects.new("cam", cam)
+    sc.collection.objects.link(ob)
+    ob.location = Vector(loc) * S
+    d = Vector(target) * S - ob.location
+    ob.rotation_euler = d.to_track_quat("-Z", "Y").to_euler()
+    sc.camera = ob
+    return ob
+
+
+SHOTS = {
+    # nom : (position, cible, focale)
+    "sabaody": ((-3200, -5200, 2300), (0, 200, 400), 26),
+    "sabaody_sol": ((-600, -1500, 160), (300, 600, 380), 20),
+}
+
+
+def main():
+    argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--shots", default="")
+    ap.add_argument("--samples", type=int, default=64)
+    ap.add_argument("--res", default="1600x900")
+    ap.add_argument("--out", default=os.path.join(ROOT, "previews"))
+    ap.add_argument("--blend", default="")
+    ap.add_argument("--only-blend", action="store_true")
+    a = ap.parse_args(argv)
+    with open(os.path.join(BUILD, "preview.json")) as fh:
+        data = json.load(fh)
+    with open(os.path.join(HERE, "shots.json")) as fh:
+        SHOTS.update({k: tuple(v) for k, v in json.load(fh).items()})
+    sc = reset()
+    build_geometry(data, os.path.join(BUILD, "png"))
+    water(sc)
+    sky_and_sun(sc)
+    bubbles(data)
+    w, h = (int(v) for v in a.res.split("x"))
+    sc.render.resolution_x = w
+    sc.render.resolution_y = h
+    sc.cycles.samples = a.samples
+    sc.cycles.use_adaptive_sampling = True
+    sc.cycles.use_denoising = False
+    sc.cycles.max_bounces = 6
+    sc.cycles.transmission_bounces = 6
+    sc.cycles.volume_bounces = 0
+    sc.cycles.transparent_max_bounces = 8
+    sc.render.use_persistent_data = True
+    sc.view_settings.view_transform = "AgX"
+    try:
+        sc.view_settings.look = "AgX - Punchy"
+    except TypeError:
+        pass
+    sc.view_layers[0].cycles.denoising_store_passes = True
+    sc.view_layers[0].use_pass_mist = True
+    sc.world.mist_settings.start = 300
+    sc.world.mist_settings.depth = 5500
+    sc.world.mist_settings.falloff = "LINEAR"
+    sc.render.image_settings.media_type = "MULTI_LAYER_IMAGE"
+    sc.render.image_settings.file_format = "OPEN_EXR_MULTILAYER"
+    sc.render.image_settings.color_depth = "32"
+    os.makedirs(a.out, exist_ok=True)
+    names = a.shots.split(",") if a.shots else list(SHOTS)
+    if a.blend:
+        for n in SHOTS:
+            ob = camera(sc, *SHOTS[n])
+            ob.name = "Camera_" + n
+        sc.camera = bpy.data.objects["Camera_vue_ensemble"] if "Camera_vue_ensemble" in bpy.data.objects \
+            else sc.camera
+        export_blend(a.blend)
+        if a.only_blend:
+            return
+    for n in names:
+        loc, tgt, lens = SHOTS[n]
+        camera(sc, loc, tgt, lens)
+        exr = os.path.join(a.out, n + ".exr")
+        sc.render.filepath = exr
+        bpy.ops.render.render(write_still=True)
+        denoise_to_png(sc, exr, os.path.join(a.out, n + ".png"))
+        print("rendu", n, flush=True)
+
+
+if __name__ == "__main__":
+    main()
