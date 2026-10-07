@@ -36,30 +36,30 @@ def build(w):
     hub = G.ngon(X, Y, 1250, 14)
     K.quay_terrain(w, hub, Z, top=M.PAVING, side=M.STONE, flare=1.02)
     w.add(G.frustum(X, Y, 800, 760, Z, 260, 14, {"top": M.PAVING, "default": M.STONE}))
-    w.add(G.frustum(X, Y, 420, 390, 260, 480, 14, {"top": M.MARBLE, "default": M.STONE}))
+    # sommet de la ville plus haut (560 au lieu de 480) : silhouette en paliers vers la fontaine
+    w.add(G.frustum(X, Y, 420, 390, 260, 560, 14, {"top": M.MARBLE, "default": M.STONE}))
     K.stairs(w, X - 96, Y - 1240, X + 96, Y - 760, Z, 260, "+y")
-    K.stairs(w, X - 80, Y - 760, X + 80, Y - 390, 260, 480, "+y")
+    K.stairs(w, X - 80, Y - 760, X + 80, Y - 390, 260, 560, "+y")
 
-    # grande fontaine
-    w.add(G.prism(X, Y, 130, 16, 480, 1340, M.MARBLE))
-    for zb, rb in ((480, 360), (820, 260), (1120, 200)):
+    # grande fontaine (la colonne de marbre, entierement cachee dans la colonne d'eau opaque, est retiree)
+    for zb, rb in ((560, 360), (900, 260), (1200, 200)):
         w.add(G.frustum(X, Y, rb * 0.7, rb, zb, zb + 60, 16, {"top": M.WATERFALL, "default": M.MARBLE}))
-    w.add(G.prism(X, Y, 150, 16, 540, 1350, M.WATERFALL))
-    w.add(G.frustum(X, Y, 150, 330, 1350, 1500, 16, M.WATERFALL))
-    w.add(G.frustum(X, Y, 330, 120, 1500, 1580, 16, M.WATERFALL))
-    w.light((X, Y, 1600), (200, 240, 255), 1200, fifty=500, zero=1600)
-    w.marker("Grande fontaine de Water Seven", (X, Y, 480), "lieu")
+    w.add(G.prism(X, Y, 150, 16, 620, 1430, M.WATERFALL))
+    w.add(G.frustum(X, Y, 150, 330, 1430, 1580, 16, M.WATERFALL))
+    w.add(G.frustum(X, Y, 330, 120, 1580, 1660, 16, M.WATERFALL))
+    w.light((X, Y, 1680), (200, 240, 255), 1200, fifty=500, zero=1600)
+    w.marker("Grande fontaine de Water Seven", (X, Y, 560), "lieu")
 
     # Galley-La Company
     info = K.building(w, X - 224, Y + 880, Z, 448, 288, floors=3, facade=M.WIN_BLUE, roof_kind="gable",
-                      roof_mat=M.ROOF_BLUE, doors=(("-y", 0),), levels=2,
+                      roof_mat=M.ROOF_BLUE, doors=(("-x", 0),), levels=2,
                       sign=M.sign_mat("galleyla", "GALLEY-LA COMPANY", sub="Iceburg"))
     K.furnish(w, info, "office", 170)
     w.marker("Galley-La Company", (X, Y + 1020, Z), "batiment")
     for i in range(6):
-        a = math.radians(i * 60 + 30)
-        if 60 < (i * 60 + 30) < 120:
-            continue
+        # au bord du quai, face aux canaux radiaux (avant : dans l'axe de chaque pont, et a 270 deg
+        # au milieu de l'escalier sud, pied enterre de 40 u dans la rampe)
+        a = math.radians(i * 60)
         K.lamp(w, X + math.cos(a) * 1150, Y + math.sin(a) * 1150, Z)
 
     # quartiers peripheriques separes par des canaux
@@ -72,13 +72,15 @@ def build(w):
         secs.append((a0, a1))
         # pont vers le centre
         am = math.radians((a0 + a1) / 2)
-        f = G.Frame(X, Y, 0, (a0 + a1) / 2)
+        # quartier nord : pont decale de 20 deg (avant : il butait contre le dos de Galley-La)
+        f = G.Frame(X, Y, 0, (a0 + a1) / 2 + (20 if k == 1 else 0))
         w.add(f.box(1180, -80, Z - 14, 1530, 80, Z + 3, {"top": M.PLANKS, "default": M.STONE}))
         for s in (-80, 72):
             w.add(f.box(1240, s, Z, 1470, s + 8, Z + 40, M.STONE))
         # pont entre quartiers
         g = G.Frame(X, Y, 0, a1 + 6)
-        w.add(g.box(1900, -150, Z - 14, 2060, 150, Z + 3, {"top": M.PLANKS, "default": M.STONE}))
+        # le canal fait ~400-430 u de large ici (2 x r.tan6) : +-250 pour poser sur les deux quais
+        w.add(g.box(1900, -250, Z - 14, 2060, 250, Z + 3, {"top": M.PLANKS, "default": M.STONE}))
         # batiments venitiens
         for j, (rr, da, bw, bd) in enumerate(((1700, -13, 256, 256), (1700, 13, 256, 256),
                                                (2180, -14, 320, 256), (2180, 14, 320, 256))):
@@ -99,7 +101,8 @@ def build(w):
 
     # Dock 1 (chantier naval) cote ouest
     dx, dy = X - 2950, Y - 200
-    w.add(G.box(dx - 300, dy - 700, Z - 12, dx + 700, dy + 700, Z + 3, {"top": M.PLANKS_LIGHT, "default": M.STONE}))
+    # plancher elargi cote -y : le pied de la grue (dy-760..dy-720) etait pose dans le vide
+    w.add(G.box(dx - 300, dy - 800, Z - 12, dx + 700, dy + 700, Z + 3, {"top": M.PLANKS_LIGHT, "default": M.STONE}))
     for i in range(5):
         for s in (-1, 1):
             w.add(G.box(dx - 280 + i * 220, dy + s * 600 - 16, Z, dx - 248 + i * 220, dy + s * 600 + 16, Z + 600,
@@ -109,7 +112,8 @@ def build(w):
     sg = M.sign_mat("dock1", "DOCK 1", sub="Galley-La Company")
     w.add(G.box(dx - 340, dy - 200, Z + 560, dx - 330, dy + 200, Z + 660,
                 {"-x": Mat(sg, fit=True), "default": M.WOOD_BEAM}))
-    K.ship(w, dx + 100, dy, 180, 1000, "pirate")
+    # navire en construction pose sur le plancher (quille a Z-3) ; mats (Z+60+0.695L) sous le plafond Z+600
+    K.ship(w, dx + 100, dy, 180, 700, "pirate", z=Z + 60)
     # grue
     w.add(G.box(dx + 400, dy - 760, Z, dx + 440, dy - 720, Z + 900, M.IRON))
     w.add(G.box(dx + 100, dy - 760, Z + 900, dx + 700, dy - 720, Z + 940, M.IRON))
@@ -128,7 +132,8 @@ def build(w):
     a = math.atan2(ay - Y, ax - X)
     a += math.radians(-55)
     f = G.Frame(X + math.cos(a) * 2560, Y + math.sin(a) * 2560, 0, math.degrees(a))
-    w.add(f.box(-60, -220, Z - 12, 900, 220, Z + 3, {"top": M.PLANKS_LIGHT, "default": M.STONE}))
+    # quai de gare plein jusqu'au fond (avant : dalle de 15 u posee sur une langue de terrain artificielle)
+    w.add(f.box(-60, -220, -768, 900, 220, Z + 3, {"top": M.PLANKS_LIGHT, "default": M.STONE}))
     for s in (-40, 40):
         w.add(f.box(-60, s - 4, Z, 2600, s + 4, Z + 8, M.IRON))
     for k in range(6):

@@ -172,9 +172,9 @@ class Island:
         if len(self.footprints):
             D = self.footprint_distance(X, Y)
             m = 1 - smooth(150, 700, D)
-            if not self.custom_core:
-                # la plage garde sa pente : pas d'aplanissement au bord de l'eau
-                m = m * smooth(120, 420, self.coast_distance(X, Y))
+            # la plage garde sa pente : pas d'aplanissement au bord de l'eau (aussi autour des villes
+            # en brushes : sinon bosses d'herbe et falaises sous les pontons, rails et navires au large)
+            m = m * smooth(120, 420, self.coast_distance(X, Y))
             allowed = h > -300
             if self.custom_core:
                 allowed &= np.hypot(X - self.cx, Y - self.cy) > self.custom_core

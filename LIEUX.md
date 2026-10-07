@@ -62,7 +62,7 @@ Genere automatiquement par `tools/mapgen/build.py`. Les coordonnees sont en unit
 | Mont Corvo / repaire de Dadan | 1 | Village de Fuchsia | -8100 | -5300 | -10796 |
 | Moulin | 1 | Village de Fuchsia | -6200 | -6140 | -11216 |
 | Capitainerie (baratie) | 1 | Baratie | -554 | 7619 | -11168 |
-| Grande fontaine de Water Seven | 2 | Water Seven | -8200 | -7400 | -2592 |
+| Grande fontaine de Water Seven | 2 | Water Seven | -8200 | -7400 | -2512 |
 | Dock 1 (chantier naval) | 2 | Water Seven | -11150 | -7600 | -3024 |
 | Gare du Puffing Tom | 2 | Water Seven | -5413 | -8040 | -3024 |
 | Telepherique de Drum | 2 | Royaume de Drum | -8100 | 6700 | -3024 |
