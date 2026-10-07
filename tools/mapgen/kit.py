@@ -466,7 +466,7 @@ def dock(w, x0, y0, x1, y1, z=24, posts=True, mat=M.PLANKS_LIGHT):
         else:
             pts = [(px, py) for py in ys for px in (xa + 16, xb - 16)]
         for px, py in pts:
-            w.add(G.prism(px, py, 12, 6, -300, z + 16, M.WOOD_BEAM))
+            w.add(G.prism(px, py, 12, 6, -760, z + 16, M.WOOD_BEAM))   # jusqu'au fond (avant -300 : pieux suspendus)
 
 
 def ship(w, x, y, yaw, L=900, style="marine", z=0, name=None):

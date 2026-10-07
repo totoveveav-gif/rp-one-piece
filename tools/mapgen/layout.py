@@ -55,8 +55,12 @@ SHAPES = {
                   forest=0.4, peaks=[(0, 3300, 500, 900)], max_trees=70),
     "sabaody": dict(big=5800, biome="tropical", seed=17, mountains=160, hills=90, forest=0.65, open=[-90],
                     peaks=[(-66, 3900, 420, 1500)], max_trees=120),   # colline boisee dans le lobe NO (0 tombait en mer)
-    "marineford": dict(big=5700, biome="herbe", seed=18, custom_core=3900, land=64, mountains=300, hills=90,
-                       forest=0.75, lobes=[(90, 75)], peaks=[(0, 4700, 600, 1000)], max_trees=90),
+    # custom_core 3100 : le relief rejoint le bord nord du quai (avant 3900 : fosse d'eau de 800 u) ;
+    # land 60 : sous les quais (sol a 64) le relief aplani reste 4 u plus bas (pas de surfaces superposees) ;
+    # big 6800 + 2e pic plein nord (angle -58 depuis l'arriere = derriere le QG) : vraie colline boisee
+    "marineford": dict(big=6800, biome="herbe", seed=18, custom_core=3100, land=60, mountains=300, hills=90,
+                       forest=0.75, lobes=[(90, 75)], peaks=[(0, 4700, 600, 1000), (-58, 5300, 750, 1200)],
+                       max_trees=45),
     "impel": dict(big=4600, biome="roche", seed=19, land=64, mountains=650, hills=120, forest=0,
                   peaks=[(0, 2900, 700, 900), (60, 3000, 500, 700)]),
     "wano": dict(big=6100, biome="wano", seed=20, mountains=380, hills=110, forest=0.7,

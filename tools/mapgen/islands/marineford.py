@@ -21,7 +21,10 @@ def build(w):
     def pts(lst):
         return [P(a, b) for a, b in lst]
 
-    main = pts([(-3300, 380), (3300, 380), (3550, 1600), (2900, 3200), (0, 3650), (-2900, 3200), (-3550, 1600)])
+    # bord nord en arc de rayon ~3800-3900 (avant : 3650 a 4320) : avec custom_core=3100 (SHAPES), le relief
+    # naturel arrive a niveau au pied du quai -> plus de fosse d'eau entre la ville et l'arriere-pays
+    main = pts([(-3300, 380), (3300, 380), (3550, 1600), (2600, 2900), (1350, 3600), (0, 3850),
+                (-1350, 3600), (-2600, 2900), (-3550, 1600)])
     west = pts([(-3300, 380), (-1450, 380), (-1250, -900), (-1550, -2500), (-2250, -3000), (-3200, -2500), (-3650, -900)])
     east = [(2 * X - x, y) for (x, y) in west]
     for poly in (main, west, east):
@@ -41,14 +44,13 @@ def build(w):
     w.add(G.frustum(ex, ey, 300, 230, zp, zp + 440, 4, {"top": M.STONE_GREY, "default": M.STONE}, rot=45))
     w.add(G.box(ex - 224, ey - 160, zp + 440, ex + 224, ey + 160, zp + 480,
                 {"top": M.PLANKS, "default": M.WOOD_BEAM}))
-    for sx in (-200, 200):
-        w.add(G.box(ex + sx - 10, ey - 10, zp + 480, ex + sx + 10, ey + 10, zp + 760, M.WOOD_BEAM))
-    w.add(G.box(ex - 230, ey - 14, zp + 740, ex + 230, ey + 14, zp + 770, M.WOOD_BEAM))
-    K.stairs(w, ex - 64, ey + 160, ex + 64, ey + 900, zp, zp + 480, "-y")
-    for sx in (-72, 64):
-        w.add(G.box(ex + sx, ey + 160, zp + 480, ex + sx + 8, ey + 260, zp + 520, M.WOOD_BEAM))
-    for sx in (-200, 200):
-        K.flagpole(w, ex + sx, ey - 170, zp + 480, M.FLAG_MARINE, 300)
+    # pas de potence (dans l'anime, Ace est execute au sabre sur l'estrade) ; ses drapeaux la traversaient
+    # pied de l'escalier a ey+700 (avant ey+900 : il entrait de 94 u dans la porte centrale du QG)
+    K.stairs(w, ex - 64, ey + 160, ex + 64, ey + 700, zp, zp + 480, "-y")
+    for sx in (-72, 64):    # poteaux de rampe poses sur l'estrade (avant : suspendus au-dessus des marches)
+        w.add(G.box(ex + sx, ey + 120, zp + 480, ex + sx + 8, ey + 160, zp + 520, M.WOOD_BEAM))
+    for sx in (-200, 200):  # mats sur l'estrade (avant : y-170, a 4 u du bord, dans le vide)
+        K.flagpole(w, ex + sx, ey - 148, zp + 480, M.FLAG_MARINE, 300)
     w.marker("Echafaud de la place d'Oris", (ex, ey, zp + 480), "lieu")
 
     # ---------- QG de la Marine ----------------------------------------------
@@ -89,10 +91,10 @@ def build(w):
     w.marker("QG de la Marine", (X, hy0 + 320, Z), "batiment")
 
     # drapeaux de la place
-    for i in range(-3, 4):
+    for i in (-3, -2, -1, 1, 2, 3):    # pas de mat au centre : il etait plante dans l'escalier de l'echafaud
         K.flagpole(w, X + i * 360, Y + 1720, zp, M.FLAG_MARINE, 380)
     for i in range(6):
-        K.lamp(w, X - 1300 + i * 520, Y + 460, zp)
+        K.lamp(w, X - 1300 + i * 520, Y + 560, zp)   # derriere les canons (avant : 2 poteaux dans des canons)
 
     # ---------- bras ouest : casernes & entrainement --------------------------
     for j, (bx0, by0) in enumerate(((-3200, -400), (-3200, -1000))):
@@ -133,12 +135,14 @@ def build(w):
         info = K.building(w, X + lx, Y + ly, Z, 384, 256, floors=2, facade=fac, roof_kind="gable",
                           roof_mat=rf, doors=(("-y", 0),), levels=1)
         K.furnish(w, info, "house", 30 + i)
-    for i in range(8):
-        K.round_tree(w, X - 2600 + i * 740, Y + 3250 - (i % 2) * 200, Z, 300, 130)
+    # (avant : l'arbre a x+1840 entrait dans la maison rose, celui a x-2600 etait au ras du quai)
+    for lx, ly in ((-2600, 3150), (-1860, 3050), (-1120, 3250), (-380, 3050),
+                   (360, 3250), (1100, 3050), (2050, 3150), (2580, 3050)):
+        K.round_tree(w, X + lx, Y + ly, Z, 300, 130)
 
     # ---------- canons sur les quais de la baie --------------------------------
     for k in range(7):
-        ly = -2300 + k * 380
+        ly = -1500 + k * 230    # tous sur le bras (avant : -2300 et -1920 au-dessus de l'eau)
         K.cannon(w, X - 1420, Y + ly, Z, 0)
         K.cannon(w, X + 1420, Y + ly, Z, 180)
     for k in range(8):
@@ -146,9 +150,9 @@ def build(w):
 
     # ---------- port militaire : quais bas + navires ----------------------------
     for sx in (-1, 1):
-        K.dock(w, X + sx * 1250, Y - 1600, X + sx * 980, Y - 300, 24)
-        K.water_steps(w, X + sx * 1250 + (0 if sx < 0 else -0), Y - 300, X + sx * 980, Y + 380, 24, Z,
-                      "+y")
+        # quai bois et rampe colles au bras (son bord est a 1250..1450 du centre : avant, fente d'eau de 200 u)
+        K.dock(w, X + sx * 1400, Y - 1600, X + sx * 980, Y - 300, 24)
+        K.water_steps(w, X + sx * 1450, Y - 300, X + sx * 980, Y + 380, 24, Z, "+y")
     K.ship(w, X - 600, Y - 1200, 90, 1200, "marine")
     K.ship(w, X + 600, Y - 1500, 90, 1200, "marine")
     K.ship(w, X, Y - 3600, 0, 1300, "marine")
@@ -161,11 +165,13 @@ def build(w):
     # ---------- murs de siege (sortent de la mer) -------------------------------
     segs = [(-1500, -2750, -500, -2690), (-500, -2780, 500, -2720), (500, -2750, 1500, -2690)]
     for i, (a0, b0, a1, b1) in enumerate(segs):
-        b = G.box(X + a0, Y + b0, -980, X + a1, Y + b1, -60,
+        # ferme : sommet a -260 (avant -60 : mur blanc visible juste sous la surface de la baie)
+        # ouvert (lip -100 -> course 820) : sommet a +560, pied a -160, bande bleue a +420..+500
+        b = G.box(X + a0, Y + b0, -980, X + a1, Y + b1, -260,
                   {"top": M.STONE_GREY, "default": M.WHITE})
         band = G.box(X + a0 - 4, Y + b0 - 4, -400, X + a1 + 4, Y + b1 + 4, -320, M.MARINE_BLUE)
         w.ent("func_door", brushes=[b, band], targetname="marineford_murs", movedir="-90 0 0",
-              spawnflags=0, speed=70, wait=-1, lip=40, dmg=0, forceclosed=0,
+              spawnflags=0, speed=70, wait=-1, lip=-100, dmg=0, forceclosed=0,
               noise1="doors/default_move.wav", noise2="doors/default_stop.wav",
               rendercolor="255 255 255", renderamt=255, loopmovesound=1, spawnpos=0,
               origin=(X + (a0 + a1) / 2, Y + (b0 + b1) / 2, -520))
