@@ -9,7 +9,7 @@ from ..geom import Mat
 
 KEY = "wano"
 Z = 48
-ZC = 400  # colline du chateau
+ZC = 560  # colline du chateau (le donjon domine la Capitale, comme dans l'anime)
 
 
 def torii(w, x, y, z, yaw, wd=360, h=420):
@@ -36,7 +36,7 @@ def machiya(w, x, y, sx, sy, seed, door="-y", sign=None, floors=2, kind="house")
                       floor_mat=M.PLANKS_LIGHT, roof_kind="flat", roof_mat=M.ROOF_DARK, doors=((door, 0),),
                       trim=M.WOOD_BEAM, base=M.STONE_GREY, sign=sign, levels=1, overhang=0,
                       light_color=(255, 200, 150))
-    jp_roof(w, x, y, x + sx, y + sy, info["top"] - 12, 110)
+    jp_roof(w, x, y, x + sx, y + sy, info["top"] + 32, 110)   # pose sur le parapet du toit plat (il traversait le toit)
     K.furnish(w, info, kind, seed)
     return info
 
@@ -70,31 +70,33 @@ def build(w):
                               doors=(("-y", 0),), door_kind="arch", door_w=128, door_h=150, levels=1,
                               trim=M.WOOD_BEAM, overhang=0, light_color=(255, 210, 160))
             K.furnish(w, info, "office", 100)
-            z = info["top"] - 12
+            z = info["top"] + 32   # avant-toit pose sur le parapet du toit plat (il percait le toit vert)
         else:
             w.add(G.box(x0, y0, z, x0 + sx, y0 + sy, z + hh,
                         {"default": Mat(M.JP_WALL, origin=(x0, y0, z + hh), scale=(128, hh)), "top": M.WOOD_BEAM}))
             z += hh
         jp_roof(w, x0, y0, x0 + sx, y0 + sy, z, 70 if i < 3 else 150, M.ROOF_GREEN, flare=80 - i * 8)
-        z += 10 + (40 if i < 3 else 0)
-    w.add(G.box(hx - 16, hy + 80 - 70, z + 120, hx + 16, hy + 80 + 70, z + 170, M.GOLD))
-    w.add(G.box(hx - 280, hy + 80 - 262, ZC + 260, hx + 280, hy + 80 - 256, ZC + 400,
+        z += 10 + (20 if i < 3 else 0)   # etage suivant enfonce dans le toit (avant +40 : 12-16 u de vide dessous)
+    # shachihoko dans l'axe du faitage (avant : en travers, les bouts 42 u au-dessus des pans)
+    w.add(G.box(hx - 40, hy + 80 - 16, z + 120, hx + 40, hy + 80 + 16, z + 170, M.GOLD))
+    # enseigne plaquee sur le 2e etage et posee sur le 1er toit (avant : flottait 31 u au-dessus, 56 u devant le mur)
+    w.add(G.box(hx - 240, hy + 80 - 206, ZC + 280, hx + 240, hy + 80 - 200, ZC + 440,
                 {"-y": Mat(M.KANJI_WANO, fit=True), "default": M.WOOD_BEAM}))
     for s in (-1, 1):
         K.tower(w, hx + s * 560, hy - 360, ZC, 80, 260, 8, M.WHITE, M.ROOF_GREEN, 120, base=M.STONE_GREY)
     w.marker("Chateau du Shogun (Capitale des Fleurs)", (hx, hy, ZC), "batiment")
-    for i in range(6):
-        a = math.radians(i * 60 + 30)
-        sakura(w, hx + math.cos(a) * 470, hy + 80 + math.sin(a) * 400, ZC + 6, 0.9)
+    # cerisiers hors des avant-toits du donjon et plus devant sa porte (avant : 6 couronnes dans le 1er toit)
+    for dx, dy in ((-250, 620), (250, 620), (-640, 150), (620, 150)):
+        sakura(w, hx + dx, hy + dy, ZC + 6, 0.9)
 
     # ---------- allee des torii -----------------------------------------------
-    K.road(w, hx, Y - 2300, hx, hy - 1900, Z, 224, M.PAVING)
+    K.road(w, hx, Y - 2160, hx, hy - 1900, Z, 224, M.PAVING)   # avant Y-2300 : bout de dalle 13-17 u au-dessus du sable
     for k in range(4):
         torii(w, hx, Y - 2100 + k * 420, Z + 6, 90)
     w.marker("Allee des torii", (hx, Y - 1500, Z), "lieu")
 
     # ---------- quartier de machiya -------------------------------------------
-    rows = [(-1900, -1700), (-1900, -1150), (-1900, -600), (-1900, -50), (-1000, -1700), (-1000, -1150),
+    rows = [(-1000, -600), (-1900, -1150), (-1900, -600), (-1900, -50), (-1000, -1700), (-1000, -1150),
             (900, -1700), (900, -1150), (1600, -1700), (1600, -1150), (1600, -600), (1600, -50)]
     signs = {1: ("izakaya", "IZAKAYA", "bar"), 4: ("dojo", "DOJO", "storage"),
              7: ("forgeron", "FORGERON", "shop"), 9: ("ryokan", "RYOKAN", "house")}
@@ -104,8 +106,9 @@ def build(w):
         machiya(w, X + lx, Y + ly, 384, 320, 101 + i, door,
                 sign=M.sign_mat(sg[0], sg[1], board=(60, 40, 30), color=(250, 230, 200)) if sg else None,
                 kind=sg[2] if sg else "house")
-    for i in range(10):
-        sakura(w, X - 600 + (i % 2) * 1200 + (i // 2) * 30, Y - 1900 + (i // 2) * 480, Z)
+    # colonne gauche ecartee des machiya ; plus d'arbre dans le rempart (Y+20) ni sur la capitainerie (Y-1900)
+    for i in range(2, 8):
+        sakura(w, X - 450 + (i % 2) * 1050 + (i // 2) * 30, Y - 1900 + (i // 2) * 480, Z)
 
     # ---------- pagode a 5 etages ----------------------------------------------
     gx, gy = X - 1500, Y + 1300
@@ -116,7 +119,7 @@ def build(w):
                     {"default": Mat(M.PLANKS_RED, scale=(128, 128)), "top": M.WOOD_BEAM}))
         z += 110
         jp_roof(w, gx - s / 2, gy - s / 2, gx + s / 2, gy + s / 2, z, 40, M.ROOF_DARK, 70)
-        z += 50
+        z += 22   # etage suivant enfonce dans le toit (avant +50 : pose sur la pointe, 21-27 u de vide autour)
     w.add(G.prism(gx, gy, 10, 8, z, z + 260, M.GOLD))
     w.marker("Pagode", (gx, gy, Z), "lieu")
 
@@ -125,9 +128,15 @@ def build(w):
     a = math.atan2(ay - Y, ax - X)
     f = G.Frame(X + math.cos(a) * R * 0.68, Y + math.sin(a) * R * 0.68, 0, math.degrees(a))
     w.add(f.box(0, -110, Z - 12, 1100, 110, Z + 3, {"top": M.PLANKS_DARK, "default": M.WOOD_BEAM}))
-    torii(w, *f.p(120, 0)[:2], Z, math.degrees(a) + 90, 300, 380)
-    K.ship(w, *f.p(700, 480)[:2], math.degrees(a), 950, "red")
-    for i in range(8):
+    for d in (420, 760, 1080):          # pieux jusqu'au fond (le ponton flottait sans appui)
+        for s in (-1, 1):
+            w.add(G.prism(*f.p(d, s * 96)[:2], 10, 6, -760, Z - 12, M.WOOD_BEAM))
+    # torii EN TRAVERS du ponton, a son entree sur la terre ferme (avant : dans l'axe du ponton,
+    # un poteau au milieu du passage)
+    torii(w, *f.p(0, 0)[:2], Z, math.degrees(a), 300, 380)
+    K.ship(w, *f.p(1000, 380)[:2], math.degrees(a), 950, "red")   # a flot (avant : poupe echouee sur la plage)
+    # 65/200/245/335 deg retires : tronc dans le ryokan, couronnes dans 3 machiya et dans le rempart
+    for i in (0, 2, 3, 6):
         a2 = math.radians(i * 45 + 20)
         sakura(w, X + math.cos(a2) * R * 0.62, Y + math.sin(a2) * R * 0.62, Z, 1.2)
     K.env_cubemap(w, X, Y - 1000, Z + 150)

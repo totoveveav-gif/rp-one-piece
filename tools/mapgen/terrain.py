@@ -244,8 +244,10 @@ def _mat_pair(isl, H, S):
     rock = smooth(0.65, 1.0, S) + (smooth(alt[0], alt[1], H) if alt else 0)
     # pas de roche sous l'eau ni sur la plage (sinon herbe visible sous l'eau)
     rock = np.clip(rock, 0, 1) * smooth(60, 120, H)
-    if bio["peak"] is not None and H.max() > 1050:
-        return M.blend(bio["rock"], bio["peak"]), smooth(1050, 1250, H)
+    if bio["peak"] is not None and H.max() > 1750:
+        # neige seulement sur les tuiles du sommet (entierement en roche) : avant, toute tuile qui
+        # depassait 1050 passait en roche->neige, roche en carre jusqu'a l'herbe et la plage
+        return M.blend(bio["rock"], bio["peak"]), smooth(1750, 1900, H)
     if sand.max() > 0.02:
         return M.blend(bio["main"], bio["beach"]), sand
     if rock.max() > 0.02:

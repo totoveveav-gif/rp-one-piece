@@ -39,7 +39,7 @@ Genere automatiquement par `tools/mapgen/build.py`. Les coordonnees sont en unit
 | Impel Down - bloc de cellules | 3 | Impel Down | 8800 | -9300 | 5184 |
 | Palais d'Alubarna | 2 | Alabasta | 8200 | -6200 | -2624 |
 | Rain Dinners (casino) | 2 | Alabasta | 9900 | -6300 | -3024 |
-| Chateau du Shogun (Capitale des Fleurs) | 3 | Pays de Wano | 8400 | 6500 | 5520 |
+| Chateau du Shogun (Capitale des Fleurs) | 3 | Pays de Wano | 8400 | 6500 | 5680 |
 | Base de la Marine de Loguetown | 1 | Loguetown | 8900 | -6850 | -11216 |
 | Party's Bar | 1 | Village de Fuchsia | -7300 | -6240 | -11216 |
 | Restaurant Baratie | 1 | Baratie | 0 | 7200 | -11168 |

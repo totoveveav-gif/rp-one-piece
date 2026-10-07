@@ -68,7 +68,10 @@ def level_shell(w, lv):
         if i % 2 == 0 and lv != 2:   # pas de palmiers pres de l'ile d'hiver (niveau 2)
             rng.uniform(60, 120)     # tirage conserve : meme suite aleatoire
             # palmier pose au sommet du rocher (avant : pied a z 60-120, tronc et palmes enterres)
-            K.palm(w, float(top[0]), float(top[1]), float(top[2]) - 10, 300, seed=lv * 100 + i)
+            # mais pas dans les eaux de Wano (pays japonais : un ilot a palmier y detonne)
+            wx, wy = L.center("wano")
+            if not (lv == L.ISLAND_LEVEL["wano"] and math.hypot(x - wx, y - wy) < 7000):
+                K.palm(w, float(top[0]), float(top[1]), float(top[2]) - 10, 300, seed=lv * 100 + i)
 
 
 def red_line(w):

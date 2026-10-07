@@ -64,7 +64,7 @@ SHAPES = {
     "impel": dict(big=4600, biome="roche", seed=19, land=64, mountains=650, hills=120, forest=0,
                   peaks=[(0, 2900, 700, 900), (60, 3000, 500, 700)]),
     "wano": dict(big=6100, biome="wano", seed=20, mountains=380, hills=110, forest=0.7,
-                 peaks=[(0, 3900, 1650, 1250), (-60, 3900, 600, 800)], max_trees=70),
+                 peaks=[(0, 3900, 1650, 1250), (-60, 3900, 600, 800), (60, 3800, 950, 1000)], max_trees=70),
 }
 ISLAND_LEVEL = {"fuchsia": 1, "baratie": 1, "loguetown": 1,
                 "drum": 2, "water7": 2, "alabasta": 2, "enies": 2,
@@ -157,6 +157,8 @@ def coast_poly(key, n=72):
 HARBOR_OVERRIDE = {
     "marineford": lambda: (center("marineford")[0] - 1595, center("marineford")[1] - 2100, 64, 0, 560),
     "enies": lambda: (center("enies")[0] + 300, center("enies")[1] - 1500, 32, -90, 620),
+    # emplacement actuel fige (le torii du ponton, remis en travers, ne bloque plus la recherche auto)
+    "wano": lambda: (center("wano")[0] - 421.5, center("wano")[1] - 2041, 48, -101.67, 700),
 }
 
 
