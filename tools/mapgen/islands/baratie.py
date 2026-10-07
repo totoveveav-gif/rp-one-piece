@@ -22,22 +22,24 @@ def build(w):
     bot = [(-850, -240), (650, -240), (1000, 0), (650, 240), (-850, 240), (-980, 0)]
     w.add(f.hull([(x, y, DZ) for x, y in hull] + [(x, y, -260) for x, y in bot],
                  {"top": M.PLANKS_LIGHT, "default": M.HULL_YELLOW}))
-    # tete de poisson (proue)
-    w.add(f.hull([(1100, -200, 40), (1100, 200, 40), (1100, -200, 380), (1100, 200, 380),
-                  (1500, 0, 160), (1450, 0, 300)], {"default": M.HULL_YELLOW}))
+    # tete de poisson (proue) : posee sur la coque (avant : flancs de 400 de large dans le vide
+    # au-dessus de l'eau), menton dans l'eau
+    w.add(f.hull([(880, -190, 20), (880, 190, 20), (880, -190, 280), (880, 190, 280),
+                  (1420, 0, 230), (1400, 0, -60)], {"default": M.HULL_YELLOW}))
     for s in (-1, 1):
-        w.add(f.hull([(1280 + dx, s * 120 + dy, 260 + dz) for dx in (-40, 40) for dy in (-30, 30)
-                      for dz in (-40, 40)], M.WHITE_PAINT))
-        w.add(f.hull([(1300 + dx, s * 150 + dy, 260 + dz) for dx in (-20, 20) for dy in (-12, 12)
-                      for dz in (-20, 20)], M.BLACK))
+        # yeux plaques sur le flanc vertical de la tete (avant : cubes qui depassaient de ~60 unites)
+        e = f.sub(1140, s * 98.5, 0, -s * 19.38)
+        w.add(e.box(-44, min(-24 * s, 4 * s), 150, 44, max(-24 * s, 4 * s), 230, M.WHITE_PAINT))
+        w.add(e.box(-16, min(-8 * s, 9 * s), 170, 16, max(-8 * s, 9 * s), 210, M.BLACK))
     # nageoires laterales (plateformes de combat)
     for s in (-1, 1):
         w.add(f.hull([(-500, s * 380, DZ - 20), (300, s * 380, DZ - 20), (-500, s * 380, DZ),
                       (300, s * 380, DZ), (-350, s * 900, DZ - 20), (100, s * 900, DZ - 20),
                       (-350, s * 900, DZ), (100, s * 900, DZ)], {"top": M.PLANKS, "default": M.HULL_YELLOW}))
-    # queue
-    w.add(f.hull([(-1100, 0, 60), (-1100, 0, 400), (-1450, -300, 600), (-1450, 300, 600),
-                  (-1450, -300, -100), (-1450, 300, -100), (-1100, -40, 200), (-1100, 40, 200)],
+    # queue : nageoire caudale verticale, lisible de profil comme dans l'anime
+    # (avant : eventail de 600 de large en travers de la poupe = un mur vu de l'arriere)
+    w.add(f.hull([(-1040, -40, 30), (-1040, 40, 30), (-1040, -40, 300), (-1040, 40, 300),
+                  (-1460, -24, 660), (-1460, 24, 660), (-1460, -24, -80), (-1460, 24, -80)],
                  M.HULL_YELLOW))
     # restaurant (2 etages)
     rx0, ry0 = f.p(-640, -288)[:2]
@@ -75,16 +77,16 @@ def build(w):
     for p in ((-300, 0), (100, 0)):
         w.light(g.p(p[0], p[1], DZ + H - 40), (255, 214, 170), 420)
     # mats & drapeaux
-    for mx in (-860, 520):
+    for mx in (-860, 760):   # mat avant devant la tete (avant : x=520, plante devant la porte et l'enseigne)
         w.add(g.cyl((mx, 0, DZ), (mx, 0, DZ + 900), 12, 6, M.WOOD_BEAM, r1=8))
         w.add(g.box(mx - 2, 0, DZ + 760, mx + 2, 160, DZ + 880,
-                    {"+x": Mat(M.FLAG_SH, fit=True), "-x": Mat(M.FLAG_SH, fit=True), "default": M.SAIL}))
+                    {"+x": Mat(M.FLAG_BARATIE, fit=True), "-x": Mat(M.FLAG_BARATIE, fit=True), "default": M.SAIL}))
     # escaliers depuis l'eau (nageurs)
     for s in (-1, 1):
         w.add(g.ramp(-200, s * 900, -64, 0, s * 1100, DZ - 20, "-y" if s > 0 else "+y",
                      {"top": Mat(M.STAIRS_WOOD, scale=(128, 400)), "default": M.WOOD_BEAM}))
     w.marker("Restaurant Baratie", (X, Y, DZ), "batiment")
     # capitainerie sur la nageoire tribord
-    hx, hy, _ = g.p(-120, 640, 0)
+    hx, hy, _ = g.p(-270, 640, 0)   # ponton a cote de l'escalier des nageurs (avant : au-dessus)
     K.harbor(w, KEY, hx, hy, DZ, yaw + 90, 380)
     K.env_cubemap(w, *g.p(0, 0, DZ + 120))

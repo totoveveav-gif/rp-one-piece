@@ -60,8 +60,8 @@ Genere automatiquement par `tools/mapgen/build.py`. Les coordonnees sont en unit
 | Pagode | 3 | Pays de Wano | 6700 | 6900 | 5168 |
 | Echafaud de Gol D. Roger | 1 | Loguetown | 7400 | -5050 | -10910 |
 | Mont Corvo / repaire de Dadan | 1 | Village de Fuchsia | -8100 | -5300 | -10796 |
-| Moulin | 1 | Village de Fuchsia | -6200 | -6200 | -11216 |
-| Capitainerie (baratie) | 1 | Baratie | -424 | 7694 | -11168 |
+| Moulin | 1 | Village de Fuchsia | -6200 | -6140 | -11216 |
+| Capitainerie (baratie) | 1 | Baratie | -554 | 7619 | -11168 |
 | Grande fontaine de Water Seven | 2 | Water Seven | -8200 | -7400 | -2592 |
 | Dock 1 (chantier naval) | 2 | Water Seven | -11150 | -7600 | -3024 |
 | Gare du Puffing Tom | 2 | Water Seven | -5413 | -8040 | -3024 |

@@ -42,23 +42,33 @@ def level_shell(w, lv):
     w.add_world(G.box(-H, -H, L.SEA_FLOOR, H, H, 0, {"top": M.WATER, "default": M.NODRAW}))
     # quelques recifs pour animer la navigation
     import numpy as np
+    from .terrain import Island
     rng = np.random.default_rng(lv * 17)
+    # vraie cote des grandes iles (le rayon de la ville seul laissait des recifs dans les terres)
+    isles = [Island(k) for k in L.SHAPES if L.ISLAND_LEVEL[k] == lv]
     reefs = []
     for i in range(7):
         for _ in range(200):
             x, y = rng.uniform(-12500, 12500, 2)
             if all(math.hypot(x - L.center(k)[0], y - L.center(k)[1]) > L.radius(k) + 1500
                    for k in L.ISLANDS if L.ISLAND_LEVEL[k] == lv) and abs(x) > 2200 and abs(y) < 11500 \
-                    and all(math.hypot(x - a, y - b) > 2600 for a, b in reefs):
+                    and all(math.hypot(x - a, y - b) > 2600 for a, b in reefs) \
+                    and all(s.coast_distance(np.array([x]), np.array([y]))[0] < -1500 for s in isles):
                 break
+        else:
+            continue   # pas de place en pleine mer : pas de recif plutot qu'un recif sur une ile
         reefs.append((x, y))
         r = rng.uniform(260, 520)
         w.add(G.boulder(x, y, -420, r * 1.9, r * 1.6, 380, int(rng.integers(1 << 30)), M.SAND, 30,
                         flat_bottom=L.SEA_FLOOR))
-        w.add(G.boulder(x, y, 0, r, r * 0.8, rng.uniform(220, 460), int(rng.integers(1 << 30)), M.ROCK, 26,
-                        flat_bottom=-300))
+        rock = G.boulder(x, y, 0, r, r * 0.8, rng.uniform(220, 460), int(rng.integers(1 << 30)), M.ROCK, 26,
+                         flat_bottom=-300)
+        top = max((p for fc in rock.faces for p in fc.poly), key=lambda p: p[2])   # avant w.add (decalage)
+        w.add(rock)
         if i % 2 == 0 and lv != 2:   # pas de palmiers pres de l'ile d'hiver (niveau 2)
-            K.palm(w, x + r * 0.2, y, rng.uniform(60, 120), 300, seed=lv * 100 + i)
+            rng.uniform(60, 120)     # tirage conserve : meme suite aleatoire
+            # palmier pose au sommet du rocher (avant : pied a z 60-120, tronc et palmes enterres)
+            K.palm(w, float(top[0]), float(top[1]), float(top[2]) - 10, 300, seed=lv * 100 + i)
 
 
 def red_line(w):

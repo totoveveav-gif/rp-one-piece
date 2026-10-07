@@ -14,7 +14,7 @@ Z = 48
 def windmill(w, x, y, z):
     w.add(G.frustum(x, y, 150, 110, z, z + 520, 8, {"default": M.WHITE, "top": M.WOOD_BEAM}))
     w.add(G.frustum(x, y, 140, 0, z + 520, z + 700, 8, M.ROOF_THATCH))
-    w.add(G.box(x - 28, y - 152, z + 8, x + 28, y - 140, z + 128, {"-y": Mat(M.DOOR, fit=True), "default": M.WOOD_BEAM}))
+    w.add(G.box(x - 28, y - 144, z + 8, x + 28, y - 128, z + 128, {"-y": Mat(M.DOOR, fit=True), "default": M.WOOD_BEAM}))
     hub = (x, y - 170, z + 520)
     parts = [G.cylinder((x, y - 120, z + 520), (x, y - 200, z + 520), 22, 8, M.WOOD_BEAM)]
     for i in range(4):
@@ -44,12 +44,16 @@ def build(w):
     # mont Corvo (au nord-ouest) + foret
     mx, my = X - 500, Y + 900
     w.add(G.frustum(mx, my, 1000, 520, Z - 8, Z + 420, 24, {"top": M.GRASS_DARK, "default": M.GRASS_DARK}, rot=7))
-    w.add(G.boulder(mx - 150, my + 300, Z + 420, 420, 380, 360, 77, {"default": M.ROCK, "top": M.GRASS_DARK}, 30,
+    w.add(G.boulder(mx - 60, my + 200, Z + 420, 360, 330, 360, 77, {"default": M.ROCK, "top": M.GRASS_DARK}, 30,
                     flat_bottom=Z + 400))
     for i in range(16):
+        if i == 12:
+            continue  # tombait pile sur l'escalier du repaire (cote -y) et le bloquait
         a = math.radians(i * 22.5)
         r = 760 + (i % 3) * 90
-        K.round_tree(w, mx + math.cos(a) * r, my + math.sin(a) * r, Z, 360, 140, M.LEAVES)
+        # pied pose sur la pente du tronc de cone (r 991 -> Z-8, r 515 -> Z+420), un peu enfonce
+        tz = Z + max(0.0, 991 - r) * 428 / 476 - 30
+        K.round_tree(w, mx + math.cos(a) * r, my + math.sin(a) * r, tz, 360, 140, M.LEAVES)
     hut = K.building(w, mx - 128, my - 470, Z + 420, 256, 224, floors=1, facade=M.WIN_WOOD,
                      roof_kind="gable", roof_mat=M.ROOF_THATCH, doors=(("-y", 0),),
                      sign=M.sign_mat("dadan", "REPAIRE DE DADAN"))
@@ -65,7 +69,7 @@ def build(w):
                       sign=M.sign_mat("partys", "PARTY'S BAR", sub="Makino"), awning=M.AWN_RED)
     K.furnish(w, info, "bar", 151)
     w.marker("Party's Bar", (vx, vy + 460, Z), "batiment")
-    houses = [(-900, -300, M.WIN_CREAM, M.ROOF_RED, "+x"), (-900, 100, M.WIN_WOOD, M.ROOF_THATCH, "+x"),
+    houses = [(-900, -300, M.WIN_CREAM, M.ROOF_RED, "+x"), (-900, -700, M.WIN_WOOD, M.ROOF_THATCH, "+x"),
               (600, -350, M.WIN_YELLOW, M.ROOF_ORANGE, "-x"), (600, 50, M.WIN_WOOD, M.ROOF_THATCH, "-x"),
               (-300, -900, M.WIN_MINT, M.ROOF_RED, "+y"), (150, -900, M.WIN_PINK, M.ROOF_ORANGE, "+y")]
     for i, (lx, ly, fac, rf, d) in enumerate(houses):
@@ -73,13 +77,13 @@ def build(w):
                           roof_mat=rf, doors=((d, 0),), levels=1,
                           sign=M.sign_mat("maire", "MAIRIE") if i == 0 else None)
         K.furnish(w, info, "office" if i == 0 else "house", 152 + i)
-    windmill(w, vx + 1100, vy + 500, Z)
-    w.marker("Moulin", (vx + 1100, vy + 500, Z), "lieu")
+    windmill(w, vx + 1100, vy + 560, Z)   # plan des pales (y-170) a ~60 u de l'avant-toit de la maison (600, 50)
+    w.marker("Moulin", (vx + 1100, vy + 560, Z), "lieu")
     # champs
     for i in range(3):
         w.add(G.box(vx + 800, vy - 1100 + i * 260, Z - 8, vx + 1400, vy - 900 + i * 260, Z + 6,
                     {"top": [M.DIRT, M.GRASS_DARK, M.ROOF_THATCH][i], "default": M.DIRT}))
-    for i in range(6):
+    for i in range(5):   # le 6e troncon (vy-370..-230) traversait la maison (600, -350)
         K.fence(w, vx + 780, vy - 1120 + i * 150, vx + 780, vy - 980 + i * 150, Z)
 
     # port
@@ -87,8 +91,12 @@ def build(w):
     a = math.atan2(ay - Y, ax - X)
     f = G.Frame(X + math.cos(a) * R * 0.68, Y + math.sin(a) * R * 0.68, 0, math.degrees(a))
     w.add(f.box(-100, -100, Z - 12, 900, 100, Z + 3, {"top": M.PLANKS_LIGHT, "default": M.WOOD_BEAM}))
-    K.ship(w, *f.p(600, 420)[:2], math.degrees(a), 780, "merry")
-    K.ship(w, *f.p(600, -420)[:2], math.degrees(a) + 180, 1050, "red")
+    for d in (330, 600, 870):   # pieux : le ponton ne flotte plus a 36 u au-dessus de l'eau
+        for s in (-1, 1):
+            w.add(G.prism(*f.p(d, s * 88)[:2], 10, 6, -620, Z + 14, M.WOOD_BEAM))
+    # cote du port a ~0.77*R du centre (x~200 dans ce repere) : coques bien au large
+    K.ship(w, *f.p(760, 420)[:2], math.degrees(a), 780, "merry")
+    K.ship(w, *f.p(950, -420)[:2], math.degrees(a) + 180, 1050, "red")
     sm = M.sign_mat("fuchsia", "VILLAGE DE FUCHSIA", sub="East Blue")
     w.add(f.box(-120, -150, Z, -104, 150, Z + 120, {"+x": Mat(sm, fit=True), "-x": Mat(sm, fit=True),
                                                     "default": M.WOOD_BEAM}))

@@ -41,9 +41,10 @@ ISLANDS = {
 # open = directions supplementaires ou la cote reste celle de la ville (ports).
 SHAPES = {
     "fuchsia": dict(big=6200, biome="herbe", seed=11, mountains=320, hills=110, forest=0.75,
-                    peaks=[(10, 3700, 1250, 1500), (-55, 3600, 600, 900)], max_trees=70),
+                    peaks=[(10, 3400, 1000, 1800), (-55, 3500, 450, 1200)], max_trees=70,
+                    rock_alt=(1000, 1300)),   # mont Corvo boise, couronne rocheuse seulement
     "loguetown": dict(big=6000, biome="herbe", seed=12, mountains=260, hills=100, forest=0.5,
-                      peaks=[(25, 3900, 650, 1300)], max_trees=65),
+                      peaks=[(25, 3900, 480, 1600), (-35, 4300, 360, 1100)], max_trees=65),
     "drum": dict(big=5700, biome="neige", seed=13, mountains=420, hills=120, forest=0.8,
                  peaks=[(35, 3600, 900, 1100), (-40, 3900, 650, 900)], max_trees=70),
     "water7": dict(big=5000, biome="herbe", seed=14, custom_core=2750, mountains=200, hills=80, forest=0.7,

@@ -491,7 +491,7 @@ def sign(text, w=1024, h=256, seed=51, color=(255, 236, 170), board=(140, 90, 48
     return im
 
 
-def flag_strawhat(w=512, h=512):
+def flag_strawhat(w=512, h=512, hat="paille"):
     im = Image.new("RGB", (w, h), (18, 18, 20))
     d = ImageDraw.Draw(im)
     cx, cy = w // 2, int(h * 0.52)
@@ -509,6 +509,13 @@ def flag_strawhat(w=512, h=512):
     d.polygon([(cx, cy + 15), (cx - 14, cy + 40), (cx + 14, cy + 40)], fill=(18, 18, 20))
     for x in range(cx - 48, cx + 49, 24):
         d.line([(x, cy + 62), (x, cy + 110)], fill=(18, 18, 20), width=5)
+    if hat == "toque":
+        # toque de cuisinier (pavillon du Baratie)
+        for ox in (-70, 0, 70):
+            d.ellipse([cx + ox - 70, cy - 250, cx + ox + 70, cy - 130], fill=(250, 250, 248))
+        d.rectangle([cx - 90, cy - 185, cx + 90, cy - 112], fill=(250, 250, 248))
+        d.line([(cx - 90, cy - 150), (cx + 90, cy - 150)], fill=(190, 190, 196), width=5)
+        return im
     # chapeau de paille
     d.ellipse([cx - 175, cy - 150, cx + 175, cy - 85], fill=(236, 196, 70))
     d.chord([cx - 112, cy - 230, cx + 112, cy - 40], 180, 360, fill=(236, 196, 70))

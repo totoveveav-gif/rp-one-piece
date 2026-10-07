@@ -25,7 +25,7 @@ BASE = L.SEA_FLOOR + 8          # face de base des carreaux (-760)
 # rock_alt : altitudes ou la roche apparait (None = seulement sur les pentes raides)
 BIOMES = {
     "herbe": dict(main=M.GRASS, beach=M.SAND, rock=M.ROCK, rock_alt=(650, 950), peak=None,
-                  trees=("rond", "rond", "pin")),
+                  trees=("rond", "rond", "pin"), pine=M.PINE_GREEN),
     "tropical": dict(main=M.GRASS, beach=M.SAND, rock=M.ROCK, rock_alt=(650, 950), peak=None,
                      trees=("rond", "palmier")),
     "desert": dict(main=M.DESERT, beach=M.SAND, rock=M.SANDSTONE, rock_alt=(420, 700), peak=None,
@@ -198,7 +198,7 @@ class Island:
 # Constructions a respecter (aplanir autour)
 # ---------------------------------------------------------------------------
 
-TREE_MATS = {M.BARK, M.PALM, M.LEAVES, M.CANOPY, M.SAKURA, M.PINE, M.MANGROVE}
+TREE_MATS = {M.BARK, M.PALM, M.LEAVES, M.CANOPY, M.SAKURA, M.PINE, M.PINE_GREEN, M.MANGROVE}
 DOCK_MATS = {M.PLANKS_LIGHT, M.PLANKS_DARK, M.PLANKS}
 
 
@@ -240,7 +240,7 @@ def _mat_pair(isl, H, S):
     if H.max() < -60:
         return M.SAND, None        # fond marin : meme sable que le reste du fond
     sand = 1 - smooth(28, 60, H)
-    alt = bio["rock_alt"]
+    alt = isl.spec.get("rock_alt", bio["rock_alt"])
     rock = smooth(0.65, 1.0, S) + (smooth(alt[0], alt[1], H) if alt else 0)
     # pas de roche sous l'eau ni sur la plage (sinon herbe visible sous l'eau)
     rock = np.clip(rock, 0, 1) * smooth(60, 120, H)
@@ -321,7 +321,7 @@ def plant_forest(w, isl):
         x, y, z = float(X[i, j]), float(Y[i, j]), float(H[i, j])
         kind = kinds[k % len(kinds)]
         if kind == "pin" or (H[i, j] > 750 and "pin" in kinds):
-            tree_pine(w, x, y, z, rng)
+            tree_pine(w, x, y, z, rng, isl.biome.get("pine", M.PINE))
         elif kind == "palmier":
             from . import kit as K
             K.palm(w, x, y, z - 8, rng.uniform(320, 440), seed=int(rng.integers(1 << 30)), fronds=4)
@@ -338,7 +338,7 @@ def _trunk_or(mat):
     return fn
 
 
-def tree_pine(w, x, y, z, rng):
+def tree_pine(w, x, y, z, rng, mat=M.PINE):
     """Sapin d'une seule piece, peu de faces (budget de plans du moteur)."""
     h = rng.uniform(480, 720)
     r = h * rng.uniform(0.24, 0.3)
@@ -347,7 +347,7 @@ def tree_pine(w, x, y, z, rng):
     pts += [(x + math.cos(a0 + a) * r, y + math.sin(a0 + a) * r, z + h * 0.22)
             for a in np.linspace(0, 6.28, 5, endpoint=False)]
     pts.append((x, y, z + h))
-    w.add(G.brush(pts, M.PINE).retexture(_trunk_or(M.PINE)))
+    w.add(G.brush(pts, mat).retexture(_trunk_or(mat)))
 
 
 def tree_round(w, x, y, z, rng, mat):

@@ -68,6 +68,7 @@ CANOPY = reg("canopy_mangrove", _img(T.t_leaves, 17, (110, 186, 70), (60, 140, 5
              surf="grass", lms=64)
 SAKURA = reg("sakura", _img(T.t_sakura), 256, surf="grass")
 PINE = reg("pine_snow", _img(T.t_pine_snow), 256, surf="grass")
+PINE_GREEN = reg("pine_green", _img(T.t_leaves, 23, (36, 96, 52), (20, 62, 38), (60, 120, 70)), 256, surf="grass")
 
 # --- maconnerie --------------------------------------------------------------
 WHITE = reg("plaster_white", _img(T.t_plaster, 20, (242, 240, 234)), 256, surf="plaster")
@@ -147,6 +148,7 @@ DOOR_BIG = reg("door_double", _img(T.door, 512, 512, (110, 64, 34), True), 64, s
 DOOR_IRON = reg("door_iron", _img(T.door, 512, 512, (70, 72, 80), True), 64, surf="metal")
 FLAG_SH = reg("flag_strawhat", _img(T.flag_strawhat), 64, surf="carpet")
 FLAG_MARINE = reg("flag_marine", _img(T.flag_marine), 64, surf="carpet")
+FLAG_BARATIE = reg("flag_baratie", _img(T.flag_strawhat, hat="toque"), 64, surf="carpet")
 SAIL = reg("sail_plain", _img(T.sail), 64, surf="carpet")
 SAIL_MARINE = reg("sail_marine", _img(T.sail, 512, 512, "marine"), 64, surf="carpet")
 SAIL_SH = reg("sail_strawhat", _img(T.sail, 512, 512, "strawhat"), 64, surf="carpet")

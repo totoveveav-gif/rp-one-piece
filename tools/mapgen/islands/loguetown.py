@@ -49,7 +49,7 @@ def build(w):
 
     # ---------- rues + immeubles colores ----------------------------------------
     K.road(w, X, Y - 700, X, Y - 2600, Z, 256)
-    K.road(w, X - 900, Y, X - 2600, Y, Z, 224)
+    K.road(w, X - 900, Y, X - 2150, Y, Z, 224)   # s'arrete avant la plage (avant : finissait au-dessus de l'eau)
     K.road(w, X + 900, Y, X + 2600, Y, Z, 224)
     K.road(w, X, Y + 700, X, Y + 2200, Z, 224)
     shops = {0: ("armes", "ARMURERIE", "Ipponmatsu", "shop"), 2: ("tailleur", "TAILLEUR", None, "shop"),
@@ -99,7 +99,8 @@ def build(w):
                       roof_mat=M.ROOF_BLUE, doors=(("-x", 0),), door_kind="door", levels=2,
                       sign=M.sign_mat("marine_lt", "MARINE", sub="Base de Loguetown"))
     K.furnish(w, info, "office", 140)
-    K.tower(w, mx + 384, my + 256, Z, 110, 700, 12, M.WHITE, M.ROOF_BLUE, 220, band=M.MARINE_BLUE)
+    # tour accolee au mur est (avant : centree sur l'angle, un quart de tour dans les salles et le toit)
+    K.tower(w, mx + 524, my + 116, Z, 110, 700, 12, M.WHITE, M.ROOF_BLUE, 220, band=M.MARINE_BLUE)
     K.flagpole(w, mx - 500, my - 300, Z, M.FLAG_MARINE, 420)
     w.marker("Base de la Marine de Loguetown", (mx, my, Z), "batiment")
 
@@ -113,8 +114,12 @@ def build(w):
         for d in range(200, 1000, 300):
             w.prop(K.P_CLEAT, f.p(d, 110, Z), 0)
     f = G.Frame(X + math.cos(a) * R * 0.66, Y + math.sin(a) * R * 0.6, 0, math.degrees(a))
-    K.ship(w, *f.p(800, 360)[:2], math.degrees(a) + 180, 900, "pirate")
-    K.ship(w, *f.p(700, -380)[:2], math.degrees(a), 1000, "marine")
-    for i in range(8):
-        a2 = math.radians(i * 45 + 10)
-        K.round_tree(w, X + math.cos(a2) * R * 0.66, Y + math.sin(a2) * R * 0.6, Z, 300, 120)
+    # navires a quai au bout des pontons, coque entierement dans l'eau
+    # (avant : poupe du navire de la Marine et proue du pirate posees sur la plage)
+    K.ship(w, *f.p(1150, 360)[:2], math.degrees(a) + 180, 900, "pirate")
+    K.ship(w, *f.p(1100, -380)[:2], math.degrees(a), 1000, "marine")
+    # arbres d'alignement le long des rues (avant : cercle a R*0.66 qui tombait dans les pates de
+    # maisons et en tete du ponton central)
+    for tx, ty in ((1600, 280), (1600, -280), (280, -1600), (-280, -1600), (280, 1550), (-280, 1550),
+                   (-1600, -280)):
+        K.round_tree(w, X + tx, Y + ty, Z, 300, 120)
