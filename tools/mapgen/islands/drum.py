@@ -45,6 +45,9 @@ def build(w):
     peak(w, X - 1100, Y + 300, 360, 1600, 2)
     peak(w, X - 300, Y + 1700, 300, 1250, 3)
     peak(w, X + 1300, Y + 1500, 260, 1000, 4)
+    # Drum Rockies de l'arriere-pays (dans l'anime, ces montagnes cylindriques sont partout)
+    peak(w, X - 3100, Y + 1800, 400, 1500, 5)
+    peak(w, X, Y + 2850, 340, 1300, 6)
     # chateau de Drum au sommet
     info = K.building(w, cx - 256, cy - 192, top, 512, 384, floors=2, facade=M.WIN_STONE, roof_kind="flat",
                       roof_mat=M.SNOW, doors=(("-y", 0),), door_kind="arch", door_w=128, door_h=160, levels=1,
@@ -55,18 +58,24 @@ def build(w):
     K.dome(w, cx, cy, t2 + 160, 130, M.ROOF_RED, sides=12)
     for sx in (-1, 1):
         K.tower(w, cx + sx * 300, cy - 150, top, 70, 520, 10, M.STONE_GREY, M.ROOF_RED, 200, base=M.STONE_GREY)
-    K.flagpole(w, cx, cy - 260, top, M.FLAG_SH, 260)
+    # mat decale du perron, drapeau tendu vers le vide (avant : traversait la facade du chateau)
+    K.flagpole(w, cx - 170, cy - 260, top, M.FLAG_SH, 260, yaw=180)
     w.marker("Chateau de Drum", (cx, cy, top), "batiment")
     # telepherique
-    bx, by = cx - 260, cy - 1200
+    bx, by = cx - 300, cy - 1200          # cabine basse decollee du chalet voisin (les toits se touchaient)
     s_up = M.sign_mat("tele_up", "TELEPHERIQUE", sub="Vers le chateau")
     s_dn = M.sign_mat("tele_dn", "TELEPHERIQUE", sub="Vers le village")
     booth(w, bx, by, Z, "drum_tele_haut", "drum_monter", s_up)
-    booth(w, cx - 380, cy - 380, top, "drum_tele_bas", "drum_descendre", s_dn)
-    K.tp_destination(w, "drum_tele_haut", cx - 120, cy - 300, top + 16, 90)
-    K.tp_destination(w, "drum_tele_bas", bx + 200, by, Z + 16, 0)
-    w.add(G.cylinder((bx, by, Z + 190), (cx - 380, cy - 380, top + 190), 4, 6, M.IRON))
-    w.add(G.cylinder((bx + 30, by, Z + 190), (cx - 350, cy - 380, top + 190), 4, 6, M.IRON))
+    # gare haute entierement posee sur le sommet (rayon 520), ouverture (-x) vers le parvis du chateau
+    # (avant : a moitie dans le vide, ouverture au-dessus du precipice -> impossible de redescendre)
+    tx, ty = cx + 150, cy - 350
+    booth(w, tx, ty, top, "drum_tele_bas", "drum_descendre", s_dn)
+    K.tp_destination(w, "drum_tele_haut", cx - 40, cy - 330, top + 16, 90)
+    # arrivee en bas devant l'ouverture de la cabine (avant : a l'interieur du chalet voisin)
+    K.tp_destination(w, "drum_tele_bas", bx - 170, by, Z + 16, -90)
+    # cables accroches au bord sud du toit de la gare haute, au-dessus de la corniche de neige
+    w.add(G.cylinder((bx, by, Z + 190), (tx - 50, ty - 126, top + 190), 4, 6, M.IRON))
+    w.add(G.cylinder((bx + 30, by, Z + 190), (tx - 20, ty - 126, top + 190), 4, 6, M.IRON))
     w.marker("Telepherique de Drum", (bx, by, Z), "lieu")
 
     # village de Bighorn
@@ -78,7 +87,7 @@ def build(w):
               (-450, 450, "-y", None), (250, 450, "-y", None)]
     for i, (lx, ly, d, sg) in enumerate(lodges):
         info = K.building(w, vx + lx, vy + ly, Z, 320, 256, floors=2, facade=M.WIN_SNOW, roof_kind="gable",
-                          roof_mat=M.ROOF_DARK, doors=((d, 0),), levels=1, inner=M.PLANKS_LIGHT,
+                          roof_mat=M.SNOW, doors=((d, 0),), levels=1, inner=M.PLANKS_LIGHT,
                           sign=M.sign_mat(sg[0], sg[1]) if sg else None, light_color=(255, 200, 150))
         K.furnish(w, info, sg[2] if sg else "house", 201 + i)
     w.marker("Village de Bighorn", (vx, vy, Z), "lieu")
@@ -86,7 +95,11 @@ def build(w):
         a = math.radians(i * 13.8)
         r = R * (0.48 + 0.18 * ((i * 7) % 5) / 5)
         px, py = X + math.cos(a) * r, Y + math.sin(a) * r
-        if math.hypot(px - vx, py - vy) < 1100 or math.hypot(px - cx, py - cy) < 800:
+        # ni dans le village, ni dans un Drum Rocky ou son socle rocheux (rayon x 1.5)
+        if math.hypot(px - vx, py - vy) < 1100 or any(
+                math.hypot(px - qx, py - qy) < qr * 1.5 + 160
+                for qx, qy, qr in ((cx, cy, 520), (X - 1100, Y + 300, 360), (X - 300, Y + 1700, 300),
+                                   (X + 1300, Y + 1500, 260))):
             continue
         K.pine(w, px, py, Z, 420 + (i % 4) * 60, 140)
 
@@ -95,7 +108,11 @@ def build(w):
     a = math.atan2(ay - Y, ax - X)
     f = G.Frame(X + math.cos(a) * R * 0.68, Y + math.sin(a) * R * 0.68, 0, math.degrees(a))
     w.add(f.box(-100, -100, Z - 12, 1000, 100, Z + 3, {"top": M.PLANKS_DARK, "default": M.WOOD_BEAM}))
-    K.ship(w, *f.p(650, 420)[:2], math.degrees(a), 900, "pirate")
+    for d in (200, 460, 720, 980):        # pieux : le ponton ne flotte plus au-dessus de la plage et de l'eau
+        for s in (-1, 1):
+            w.add(G.prism(*f.p(d, s * 84)[:2], 12, 6, -300, Z - 12, M.WOOD_BEAM))
+    # navire au mouillage en eau profonde (avant : poupe echouee sur la plage)
+    K.ship(w, *f.p(900, 400)[:2], math.degrees(a), 900, "pirate")
     sg = M.sign_mat("drum", "ROYAUME DE DRUM", sub="Ile d'hiver")
     w.add(f.box(-120, -150, Z, -104, 150, Z + 120, {"+x": Mat(sg, fit=True), "-x": Mat(sg, fit=True),
                                                     "default": M.WOOD_BEAM}))

@@ -65,7 +65,7 @@ Genere automatiquement par `tools/mapgen/build.py`. Les coordonnees sont en unit
 | Grande fontaine de Water Seven | 2 | Water Seven | -8200 | -7400 | -2592 |
 | Dock 1 (chantier naval) | 2 | Water Seven | -11150 | -7600 | -3024 |
 | Gare du Puffing Tom | 2 | Water Seven | -5413 | -8040 | -3024 |
-| Telepherique de Drum | 2 | Royaume de Drum | -8060 | 6700 | -3024 |
+| Telepherique de Drum | 2 | Royaume de Drum | -8100 | 6700 | -3024 |
 | Village de Bighorn | 2 | Royaume de Drum | -8200 | 6200 | -3024 |
 | Capitainerie (fuchsia) | 1 | Village de Fuchsia | -6068 | -5666 | -11216 |
 | Capitainerie (loguetown) | 1 | Loguetown | 6163 | -3428 | -11216 |
@@ -97,5 +97,5 @@ Genere automatiquement par `tools/mapgen/build.py`. Les coordonnees sont en unit
 | arrive_n2sud | 0 | -12500 | -3048 |
 | arrive_n3sud | 0 | -12500 | 5144 |
 | arrive_impel | 7744 | -6267 | 5144 |
-| drum_tele_haut | -7920 | 7600 | -708 |
-| drum_tele_bas | -7860 | 6700 | -3008 |
+| drum_tele_haut | -7840 | 7570 | -708 |
+| drum_tele_bas | -8270 | 6700 | -3008 |

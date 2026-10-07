@@ -343,8 +343,9 @@ def tree_pine(w, x, y, z, rng, mat=M.PINE):
     h = rng.uniform(480, 720)
     r = h * rng.uniform(0.24, 0.3)
     a0 = rng.uniform(0, 6.28)
-    pts = [(x + math.cos(a0 + a) * 20, y + math.sin(a0 + a) * 20, z - 24) for a in (0, 2.09, 4.19)]
-    pts += [(x + math.cos(a0 + a) * r, y + math.sin(a0 + a) * r, z + h * 0.22)
+    # pied court et large : plus de "toupie" posee sur sa pointe (meme nombre de points et de faces)
+    pts = [(x + math.cos(a0 + a) * r * 0.3, y + math.sin(a0 + a) * r * 0.3, z - 40) for a in (0, 2.09, 4.19)]
+    pts += [(x + math.cos(a0 + a) * r, y + math.sin(a0 + a) * r, z + h * 0.12)
             for a in np.linspace(0, 6.28, 5, endpoint=False)]
     pts.append((x, y, z + h))
     w.add(G.brush(pts, mat).retexture(_trunk_or(mat)))
@@ -356,8 +357,9 @@ def tree_round(w, x, y, z, rng, mat):
     r = h * rng.uniform(0.32, 0.42)
     a0 = rng.uniform(0, 6.28)
     # houppier arrondi : deux couronnes decalees + sommet (moins "diamant")
-    pts = [(x + math.cos(a0 + a) * 22, y + math.sin(a0 + a) * 22, z - 24) for a in (0, 2.09, 4.19)]
-    pts += [(x + math.cos(a0 + a) * r * 0.8, y + math.sin(a0 + a) * r * 0.8, z + h * 0.5)
+    # pied large et enterre : l'arbre ne tient plus en equilibre sur une pointe
+    pts = [(x + math.cos(a0 + a) * r * 0.22, y + math.sin(a0 + a) * r * 0.22, z - 40) for a in (0, 2.09, 4.19)]
+    pts += [(x + math.cos(a0 + a) * r * 0.8, y + math.sin(a0 + a) * r * 0.8, z + h * 0.4)
             for a in (0, 1.571, 3.142, 4.712)]
     pts += [(x + math.cos(a0 + a + 0.785) * r, y + math.sin(a0 + a + 0.785) * r, z + h * 0.72)
             for a in (0, 1.571, 3.142, 4.712)]
