@@ -35,7 +35,7 @@ Genere automatiquement par `tools/mapgen/build.py`. Les coordonnees sont en unit
 | Bar de Shakky | 3 | Archipel de Sabaody | -9092 | -7140 | 5168 |
 | QG de la Marine | 3 | Marineford | -7600 | 6976 | 5184 |
 | Tribunal d'Enies Lobby | 2 | Enies Lobby | 8300 | 7200 | -2752 |
-| Tour de la Justice | 2 | Enies Lobby | 8300 | 8300 | -2752 |
+| Tour de la Justice | 2 | Enies Lobby | 8300 | 8700 | -2752 |
 | Impel Down - bloc de cellules | 3 | Impel Down | 8800 | -9300 | 5184 |
 | Palais d'Alubarna | 2 | Alabasta | 8200 | -6200 | -2624 |
 | Rain Dinners (casino) | 2 | Alabasta | 9900 | -6300 | -3024 |

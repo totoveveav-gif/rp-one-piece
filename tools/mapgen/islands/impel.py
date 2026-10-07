@@ -60,12 +60,14 @@ def build(w):
     w.add(G.prism(X, Y + 200, 300, 8, Z + 1060, Z + 1700, {"default": Mat(M.WIN_DARK, origin=(X, Y, Z)),
                                                           "top": M.STONE_DARK}))
     w.add(G.frustum(X, Y + 200, 360, 0, Z + 1700, Z + 2050, 8, M.ROOF_DARK))
-    w.add(G.box(X - 200, Y + 200 - 712, Z + 700, X + 200, Y + 200 - 700, Z + 900,
-                {"-y": Mat(M.sign_mat("impel", "IMPEL DOWN", sub="Prison du Gouvernement Mondial",
+    # panneau plaque sur la face nord de l'octogone (apotheme 700*cos(22.5) = 647), cote port/arrivee,
+    # entre les tours de 67.5 et 112.5 deg (bord interieur a +-166)
+    w.add(G.box(X - 150, Y + 200 + 645, Z + 720, X + 150, Y + 200 + 657, Z + 870,
+                {"+y": Mat(M.sign_mat("impel", "IMPEL DOWN", sub="Prison du Gouvernement Mondial",
                                       color=(255, 120, 90), board=(60, 60, 66)), fit=True), "default": M.IRON}))
 
     # bloc de cellules devant la forteresse
-    info = cell_block(w, X - 480, Y - 1060, Z)
+    info = cell_block(w, X - 480, Y - 1092, Z)   # 32 u plus au sud : le toit ne rentre plus dans les tours
     w.marker("Impel Down - bloc de cellules", (X, Y - 900, Z), "batiment")
     # bureau du directeur
     info = K.building(w, X + 560, Y - 1060, Z, 384, 320, floors=2, facade=M.WIN_DARK, inner=M.STONE_DARK,
@@ -79,21 +81,28 @@ def build(w):
     a = math.atan2(ay - Y, ax - X)
     px, py = X + math.cos(a) * R * 0.78, Y + math.sin(a) * R * 0.78
     f = G.Frame(px, py, 0, math.degrees(a))
-    w.add(f.box(-120, -160, 12, 700, 160, 67, {"top": M.STONE_GREY, "default": M.STONE_DARK}))
-    K.ship(w, *f.p(500, 520)[:2], math.degrees(a), 1100, "marine")
+    # jetee pleine jusqu'au fond, qui part du sol plat (avant : flottait a z=12 et commencait 56 u au-dessus de la plage)
+    w.add(f.box(-420, -160, -768, 700, 160, 67, {"top": M.STONE_GREY, "default": M.STONE_DARK}))
+    K.ship(w, *f.p(650, 520)[:2], math.degrees(a), 1100, "marine")   # poupe en eau profonde (quille hors du fond)
     for s in (-1, 1):
         K.flagpole(w, *f.p(600, s * 140)[:2], 64, M.FLAG_MARINE, 300)
 
     # torches & rochers
     for i in range(10):
         a = math.radians(i * 36)
-        K.lamp(w, X + math.cos(a) * 900, Y + 200 + math.sin(a) * 900, Z, (255, 140, 80), 260)
+        lx, ly = X + math.cos(a) * 900, Y + 200 + math.sin(a) * 900
+        if ly < Y - 540:
+            # 252 et 288 deg tombaient dans les cellules 2 et 6 (a travers le lit et le plafond) :
+            # on les met de part et d'autre de la porte du bloc (porte en X + 32)
+            lx, ly = X + 32 + (170 if lx > X else -170), Y - 1170
+        K.lamp(w, lx, ly, Z, (255, 140, 80), 260)
     a_arr = math.atan2(L.arrival_point(KEY)[1] - Y, L.arrival_point(KEY)[0] - X)
     for i in range(7):
         a = math.radians(i * 51 + 20)
-        if abs((a - a_arr + math.pi) % (2 * math.pi) - math.pi) < math.radians(30):
-            continue
+        da = abs((a - a_arr + math.pi) % (2 * math.pi) - math.pi)
+        if da < math.radians(30) or da > math.radians(60):
+            continue   # au-dela de 60 deg du port, R*1.05 est en pleine terre : rocher enterre
         rx, ry = X + math.cos(a) * R * 1.05, Y + math.sin(a) * R * 1.05
         w.add(G.boulder(rx, ry, -100 + 60 * (i % 3), 240, 200, 520 + 120 * (i % 3), 900 + i, M.ROCK_DARK, 26,
                         flat_bottom=-768))
-    K.env_cubemap(w, X, Y - 600, Z + 128)
+    K.env_cubemap(w, X, Y - 1300, Z + 128)   # en plein air devant le bloc (Y-600 tombait dans la cellule 4)

@@ -49,19 +49,23 @@ def build(w):
     name, X, Y, R, sub = L.ISLANDS[KEY]
     poly = G.blob(X, Y, R, R * 0.9, 18, 21, 0.06)
     # base : plage basse + falaise jusqu'au plateau
-    low = L.terrain(w, poly, X, Y, 32, top=M.SAND, beach=M.SAND)
+    low = L.terrain(w, poly, X, Y, 32, top=M.ROCK, beach=M.SAND)   # socle rocheux, frange de sable au bord de l'eau
     cliff = G.blob(X, Y + 150, R * 0.6, R * 0.52, 32, 22, 0.05)
     w.add(G.poly_frustum(G.scale_poly(cliff, X, Y + 150, 1.08), cliff, 0, ZP, {"top": M.GRASS, "default": M.ROCK}))
     w.marker(name, (X, Y, 0), "ile")
     w.markers[-1]["poly"] = [list(p) for p in poly]
 
-    # cascades sur les falaises
+    # cascades sur les falaises : nappe plaquee sur la pente, au sommet le plus avance de la falaise
+    # (8 u devant la roche, 32 u dedans) : ne flotte plus en haut, ne depasse plus au-dessus du plateau
     for ang in (200, 330):
         a = math.radians(ang)
-        cx, cy = X + math.cos(a) * R * 0.62, Y + 150 + math.sin(a) * R * 0.54
-        f = G.Frame(cx, cy, 0, ang)
-        w.add(f.box(-10, -150, 20, 30, 150, ZP + 10, {"+x": M.WATERFALL, "default": M.WATERFALL}))
-        w.add(f.box(-60, -200, 30, 160, 200, 40, M.WATERFALL))
+        ca, sa = math.cos(a), math.sin(a)
+        px, py = max(cliff, key=lambda p: (p[0] - X) * ca + (p[1] - Y - 150) * sa)
+        ft = G.Frame(px, py, ZP + 2, ang)                                              # bord du plateau
+        fb = G.Frame(X + (px - X) * 1.075, Y + 150 + (py - Y - 150) * 1.075, 20, ang)  # pied (base 1.08x)
+        nappe = [(d, t, 0) for d in (-32, 8) for t in (-150, 150)]
+        w.add(G.brush(ft.pts(nappe) + fb.pts(nappe), M.WATERFALL))
+        w.add(fb.box(-60, -200, 6, 160, 200, 14, M.WATERFALL))
 
     # porte principale au niveau du quai + grand escalier
     gx, gy = X - 300, Y - R * 0.52 - 40
@@ -72,7 +76,8 @@ def build(w):
     mg = M.sign_mat("enies", "ENIES LOBBY", sub="Ile judiciaire")
     w.add(G.box(gx - 170, gy - 268, 32 + 540, gx + 170, gy - 260, 32 + 620,
                 {"-y": Mat(mg, fit=True), "default": M.STONE_GREY}))
-    K.stairs(w, gx - 128, gy - 260, gx + 128, gy + 520, 32, ZP + 6, "+y")
+    # la rampe s'arrete au bord du plateau (bord a Y-1144..-1165) : avant, elle s'enfoncait dans la falaise
+    K.stairs(w, gx - 128, gy - 260, gx + 128, gy + 250, 32, ZP + 6, "+y")
     w.marker("Porte principale d'Enies Lobby", (gx, gy - 260, 32), "lieu")
 
     # ville avant
@@ -91,7 +96,7 @@ def build(w):
                       roof_mat=M.STONE_GREY, doors=(("-y", 0),), door_kind="arch", door_w=160, door_h=200,
                       levels=1, trim=M.MARBLE, light_color=(255, 245, 230))
     K.furnish(w, info, "office", 45)
-    for i in range(8):
+    for i in (0, 1, 2, 5, 6, 7):   # pas de colonne devant la porte d'arche (centree en tx + 64)
         cx = tx - 455 + i * 130
         w.add(G.prism(cx, ty - 20, 26, 10, ZP + 48, ZP + 48 + 340, M.MARBLE))
     w.add(G.box(tx - 500, ty - 70, ZP + 388, tx + 500, ty + 80, ZP + 416, M.MARBLE))
@@ -99,11 +104,14 @@ def build(w):
     w.marker("Tribunal d'Enies Lobby", (tx, ty, ZP), "batiment")
 
     # pont de l'hesitation + Tour de la Justice
-    k0x, k0y = X - 100, Y + 1700
+    # la Tour a son propre pilier, separe du plateau par un gouffre (~190 u en haut) ;
+    # le pont part du dos du tribunal et franchit vraiment le vide
+    k0x, k0y = X - 100, Y + 2100
     w.add(G.frustum(k0x, k0y, 520, 380, -768, ZP + 4, 10, {"top": M.PAVING, "default": M.ROCK}))
-    w.add(G.box(k0x - 64, ty + 600, ZP - 24, k0x + 64, k0y - 360, ZP + 6, {"top": M.PLANKS, "default": M.WOOD_BEAM}))
+    w.add(G.box(k0x - 64, ty + 640, ZP - 24, k0x + 64, k0y - 330, ZP + 6, {"top": M.PLANKS, "default": M.WOOD_BEAM}))
     for s in (-64, 56):
-        w.add(G.box(k0x + s, ty + 600, ZP + 6, k0x + s + 8, k0y - 360, ZP + 46, M.WOOD_BEAM))
+        # garde-corps seulement au-dessus du vide : on monte sur le pont par les cotes depuis l'herbe
+        w.add(G.box(k0x + s, Y + 1480, ZP + 6, k0x + s + 8, k0y - 330, ZP + 46, M.WOOD_BEAM))
     info = K.building(w, k0x - 192, k0y - 192, ZP, 384, 384, floors=9, facade=M.WIN_WHITE, roof_kind="hip",
                       roof_mat=M.ROOF_BLUE, roof_h=360, doors=(("-y", 0),), levels=2, overhang=40)
     K.furnish(w, info, "office", 46)
