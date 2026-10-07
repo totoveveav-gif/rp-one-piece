@@ -444,7 +444,8 @@ def mangrove(w, x, y, z, r=200, h=1300, canopy=900, grove=None, face_yaw=-90):
         mat = M.grove_mat(grove)
         f = G.Frame(x, y, z, face_yaw)
         # plaque peinte sur le tronc, face vers face_yaw
-        w.add(f.box(r * 0.92, -110, 300, r * 0.92 + 8, 110, 520,
+        # face avant juste hors du tronc (16 pans : apotheme 0.98 r), dos noye dedans : rien de cache ni de decolle
+        w.add(f.box(r * 0.7, -100, 320, r, 100, 520,
                     {"+x": Mat(mat, fit=True), "default": M.MANGROVE}))
 
 

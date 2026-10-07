@@ -70,20 +70,20 @@ def build(w):
         K.road(w, -700, 0, -2000, 0, z)
         K.road(w, 0, 700, 0, 1150, z, 160)
         for i, y in enumerate(range(-900, -2100, -300)):
-            K.lamp(w, 150, y, z + 6)
-            K.lamp(w, -150, y - 150, z + 6)
+            K.lamp(w, 150, y, z)
+            K.lamp(w, -150, y - 150, z)
 
         # mangroves geantes
         for ang, num in ((40, 1), (140, 13), (225, 24), (315, 41)):
             a = math.radians(ang)
-            K.mangrove(w, math.cos(a) * 1950, math.sin(a) * 1950, z, r=170, h=1300, canopy=720,
+            K.mangrove(w, math.cos(a) * 1850, math.sin(a) * 1850, z, r=170, h=1300, canopy=720,
                        grove=num, face_yaw=ang + 180)
         K.mangrove(w, 0, 2080, z, r=150, h=1450, canopy=640, grove=70, face_yaw=-90)
 
         # Maison des ventes (NE)
         info = K.building(w, 700, 250, z, 512, 448, floors=2, facade=M.WIN_CREAM, roof_kind="hip",
                           roof_mat=M.ROOF_PURPLE, doors=(("-x", 0), ("-y", 0)), door_kind="arch",
-                          door_w=128, door_h=144, sign=M.sign_mat("auction", "MAISON DES VENTES", sub="Groove 1"),
+                          door_w=128, door_h=144, sign=M.sign_mat("auction", "MAISON DES VENTES", sub="Grove 1"),
                           awning=M.AWN_PURPLE, levels=1)
         K.furnish(w, info, "office")
         w.marker("Maison des ventes", (956, 474, z), "batiment")
@@ -146,27 +146,44 @@ def build(w):
         K.dock(w, -128, -3300, 128, -2150, z)
         K.dock(w, -1000, -2950, -780, -1950, z)
         K.dock(w, 780, -2950, 1000, -1950, z)
-        K.dock(w, -780, -3000, -128, -2850, z, posts=False)
+        K.dock(w, -780, -3000, -128, -2850, z)   # pilotis : possibles depuis que le Merry est recule
         for x in (-900, 900):
-            for y in (-2700, -2400):
-                w.prop(K.P_CLEAT, (x + (110 if x > 0 else -110), y, z), 0)
+            for y in (-2806, -2550):
+                w.prop(K.P_CLEAT, (x + (60 if x > 0 else -60), y, z + 3), 0)
         for i in range(6):
             w.prop(K.P_CRATE, (60 - (i % 2) * 120, -2300 - i * 120, z + 20), i * 25)
-        K.ship(w, -470, -3150, 90, 820, "merry")
-        K.ship(w, 1420, -2650, 90, 900, "red")
+        K.ship(w, -470, -3450, 90, 820, "merry")   # proue 40 u devant le ponton transversal (avant : ponton dans la coque)
+        K.ship(w, 1180, -2900, 90, 900, "red")   # amarre le long du quai est (avant : isole, proue sur la plage)
 
         # palmiers en bord de plage
         for i, ang in enumerate((0, 18, 70, 110, 160, 190, 250, 285, 345, 330, 200)):
             a = math.radians(ang)
             K.palm(w, math.cos(a) * 2120, math.sin(a) * 2120, z, 380 + 40 * (i % 3), seed=i)
 
-        # bulles de Sabaody (sans collision)
+        # bulles de Sabaody (sans collision) : elles montent des racines des mangroves (basses pres des
+        # racines, plus hautes plus loin, sous les branches) ; jamais dans un tronc, une maison ou la roue
         import numpy as np
         rng = np.random.default_rng(7)
-        for i in range(26):
+        roots = [(math.cos(math.radians(a)) * 1850, math.sin(math.radians(a)) * 1850)
+                 for a in (40, 140, 225, 315)] + [(0, 2080)]
+        palms = [(math.cos(math.radians(a)) * 2120, math.sin(math.radians(a)) * 2120)
+                 for a in (0, 18, 70, 110, 160, 190, 250, 285, 345, 330, 200)]
+        keep_out = [(700, 250, 1212, 698), (600, 860, 984, 1244), (-1084, 300, -700, 620), (-984, 760, -728, 1016),
+                    (-1212, -698, -700, -250), (-560, -1160, -304, -904), (700, -698, 1084, -314),
+                    (304, -1160, 560, -904), (-560, 1120, 560, 1620)]     # maisons, grande roue + arche du parc
+        n = 0
+        for _ in range(400):
+            if n == 26:
+                break
+            gx, gy = roots[n % 5]
             a = rng.uniform(0, 2 * math.pi)
-            r = rng.uniform(300, 2100)
-            model = "models/hunter/misc/sphere375x375.mdl" if i % 3 == 0 else "models/hunter/misc/sphere2x2.mdl"
-            w.ent("prop_dynamic", (math.cos(a) * r, math.sin(a) * r, z + rng.uniform(220, 1200)),
-                  model=model, solid=0, rendermode=1, renderamt=70, rendercolor="190 235 255",
-                  disableshadows=1, DisableBoneFollowers=1, angles=(0, 0, 0))
+            d = rng.uniform(520, 950)
+            bx, by = gx + math.cos(a) * d, gy + math.sin(a) * d
+            bz = 110 + (d - 520) * rng.uniform(0.3, 1.6)
+            if (math.hypot(bx, by) > 2350 or any(math.hypot(bx - px, by - py) < 280 for px, py in palms)
+                    or any(x0 - 130 < bx < x1 + 130 and y0 - 130 < by < y1 + 130 for x0, y0, x1, y1 in keep_out)):
+                continue
+            model = "models/hunter/misc/sphere375x375.mdl" if n % 3 == 0 else "models/hunter/misc/sphere2x2.mdl"
+            w.ent("prop_dynamic", (bx, by, z + bz), model=model, solid=0, rendermode=1, renderamt=70,
+                  rendercolor="190 235 255", disableshadows=1, DisableBoneFollowers=1, angles=(0, 0, 0))
+            n += 1
