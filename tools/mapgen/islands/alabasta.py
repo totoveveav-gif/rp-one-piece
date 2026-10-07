@@ -32,8 +32,10 @@ def build(w):
     px, py = X + 200, Y + 1000
     mesa = G.blob(px, py, 1150, 950, 28, 42, 0.04)
     w.add(G.poly_frustum(G.scale_poly(mesa, px, py, 1.07), mesa, Z - 8, ZP,
-                         {"top": M.SANDPAVE, "default": M.SANDBLOCK}))
-    K.stairs(w, px - 160, py - 950 - 760, px + 160, py - 900, Z, ZP + 2, "+y", M.STAIRS_SAND, M.SANDBLOCK)
+                         {"top": M.SANDPAVE, "default": M.ROCK_SAND}))   # falaises ocre du plateau d'Alubarna
+    # pied a 80 u devant la tour de l'horloge (avant : 150 u dedans) ; le haut arrive au ras du bord du
+    # plateau (avant : marche de 22 a 28 u sous le rebord). Pente 37 deg, praticable.
+    K.stairs(w, px - 160, py - 1480, px + 160, py - 950, Z, ZP + 2, "+y", M.STAIRS_SAND, M.SANDBLOCK)
     w.marker("Palais d'Alubarna", (px, py, ZP), "batiment")
     # palais
     info = K.building(w, px - 448, py - 200, ZP, 896, 512, floors=2, facade=M.WIN_SAND, inner=M.SANDSTONE,
@@ -50,8 +52,9 @@ def build(w):
     for i in range(8):
         a = math.radians(i * 45 + 22)
         K.palm(w, px + math.cos(a) * 820, py + math.sin(a) * 640, ZP, 380, seed=60 + i)
-    for sx in (-260, 260):
-        K.flagpole(w, px + sx, py - 280, ZP, M.AWN_PURPLE, 360)
+    for sx in (-170, 170):
+        # drapeau tourne vers l'escalier (yaw 180) : avant il s'enfoncait de 88 u dans la facade du palais
+        K.flagpole(w, px + sx, py - 280, ZP, M.AWN_PURPLE, 360, yaw=180)
 
     # ---------- ville basse ---------------------------------------------------
     K.plaza(w, G.ngon(X, Y - 700, 560, 12), Z, M.SANDPAVE)
@@ -86,7 +89,7 @@ def build(w):
         sy = Y - 1250
         w.add(G.box(sx - 50, sy - 30, Z, sx + 50, sy + 30, Z + 40, {"top": M.PLANKS, "default": M.PLANKS_DARK}))
         for dx in (-46, 42):
-            w.add(G.box(sx + dx, sy - 30, Z, sx + dx + 4, sy - 26, Z + 120, M.WOOD_BEAM))
+            w.add(G.box(sx + dx, sy - 30, Z, sx + dx + 4, sy - 26, Z + 112, M.WOOD_BEAM))  # sous l'auvent
         w.add(G.ramp(sx - 60, sy - 50, Z + 110, sx + 60, sy + 40, Z + 130, "+y",
                      [M.AWN_RED, M.AWN_BLUE, M.AWN_PURPLE, M.AWN_GREEN][i % 4]))
         w.prop(K.P_CRATE2, (sx, sy + 60, Z + 20), i * 30)
@@ -105,13 +108,19 @@ def build(w):
     w.marker("Rain Dinners (casino)", (rx, ry, Z), "batiment")
 
     # ---------- oasis -----------------------------------------------------------
-    ox, oy = X - 1700, Y + 1200
-    w.add(G.prism(ox, oy, 430, 14, Z, Z + 40, M.SANDBLOCK))
-    w.add_world(G.prism(ox, oy, 400, 14, Z + 4, Z + 44, {"top": M.WATER_OASIS, "default": M.NODRAW}))
-    w.add(G.prism(ox, oy, 396, 14, Z - 4, Z + 4, M.SAND))
+    ox, oy = X + 3300, Y + 500    # oasis dans les dunes pres de Rain Dinners (Rainbase)
+    # margelle en anneau : avant, disque plein de 40 u avec 4 u d'eau dessus (socle, pas de bassin)
+    ro, ri = G.ngon(ox, oy, 430, 14, 180 / 14), G.ngon(ox, oy, 400, 14, 180 / 14)
+    for i in range(14):
+        j = (i + 1) % 14
+        w.add(G.brush([(p[0], p[1], z) for p in (ro[i], ro[j], ri[i], ri[j]) for z in (Z, Z + 40)],
+                      M.SANDBLOCK))
+    w.add_world(G.prism(ox, oy, 400, 14, Z + 4, Z + 34, {"top": M.WATER_OASIS, "default": M.NODRAW}))
+    w.add(G.prism(ox, oy, 400, 14, Z - 4, Z + 4, M.SAND))
     for i in range(7):
         a = math.radians(i * 51)
-        K.palm(w, ox + math.cos(a) * 520, oy + math.sin(a) * 520, Z, 360 + 30 * (i % 3), seed=80 + i)
+        # pied 24 u plus bas (meme sommet) : le palmier cote plage (i = 3, sol ~22) ne flotte plus
+        K.palm(w, ox + math.cos(a) * 520, oy + math.sin(a) * 520, Z - 24, 384 + 30 * (i % 3), seed=80 + i)
     w.marker("Oasis", (ox, oy, Z), "lieu")
 
     # ---------- port ----------------------------------------------------------
@@ -120,14 +129,22 @@ def build(w):
     f = G.Frame(X + math.cos(a) * R * 0.68, Y + math.sin(a) * R * 0.68, 0, math.degrees(a))
     w.add(f.box(0, -110, Z - 12, 1000, 110, Z + 3, {"top": M.PLANKS_LIGHT, "default": M.WOOD_BEAM}))
     w.add(f.box(1000, -420, Z - 12, 1150, 420, Z + 3, {"top": M.PLANKS_LIGHT, "default": M.WOOD_BEAM}))
-    K.ship(w, *f.p(800, -560)[:2], math.degrees(a), 900, "pirate")
+    # pilotis (le ponton et sa tete flottaient a 36 u au-dessus de l'eau et de la plage)
+    for d, lat in ((360, (-96, 96)), (620, (-96, 96)), (880, (-96, 96)), (1075, (-400, -130, 130, 400))):
+        for s in lat:
+            w.add(f.box(d - 8, s - 8, L.SEA_FLOOR, d + 8, s + 8, Z - 12, M.WOOD_BEAM))
+    # navire amarre le long de la tete du ponton, en eau profonde (avant : poupe a 60-120 u du rivage,
+    # quille au ras du fond -> bateau echoue sur la plage)
+    K.ship(w, *f.p(1100, -560)[:2], math.degrees(a), 900, "pirate")
     sm = M.sign_mat("alabasta", "ALABASTA", sub="Royaume du desert", board=(190, 140, 80))
     w.add(f.box(-30, -150, Z, -14, 150, Z + 120, {"+x": Mat(sm, fit=True), "-x": Mat(sm, fit=True),
                                                   "default": M.WOOD_BEAM}))
 
     # dunes & rochers
-    for i, (lx, ly, r, h) in enumerate(((1500, -2000, 500, 160), (-2300, -1300, 420, 140), (2400, -600, 380, 200),
-                                        (-600, 2300, 520, 180), (1200, 2300, 360, 120))):
+    # (-2300, -1300) et (-600, 2300) retirees : elles debordaient de 160 a 370 u au-dessus de la mer
+    # (dalles plates a z 28 flottant sur la plage et l'eau). Graines des dunes gardees inchangees.
+    for i, (lx, ly, r, h) in ((0, (1500, -2000, 500, 160)), (2, (2400, -600, 380, 200)),
+                              (4, (1200, 2300, 360, 120))):
         w.add(G.boulder(X + lx, Y + ly, Z - 40, r * 1.4, r * 1.1, h * 0.9, 300 + i, M.DESERT, 36,
                         flat_bottom=Z - 20))
     K.env_cubemap(w, X, Y - 700, Z + 200)

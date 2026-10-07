@@ -286,6 +286,10 @@ materials/onepiece/rock_red.vmt
 addon/materials/onepiece/rock_red.vmt
 materials/onepiece/rock_red.vtf
 addon/materials/onepiece/rock_red.vtf
+materials/onepiece/rock_sand.vmt
+addon/materials/onepiece/rock_sand.vmt
+materials/onepiece/rock_sand.vtf
+addon/materials/onepiece/rock_sand.vtf
 materials/onepiece/roof_blue.vmt
 addon/materials/onepiece/roof_blue.vmt
 materials/onepiece/roof_blue.vtf

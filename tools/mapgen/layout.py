@@ -49,7 +49,7 @@ SHAPES = {
                  peaks=[(35, 3600, 650, 1500), (-40, 3900, 400, 1300)], max_trees=70),   # collines de neige
     "water7": dict(big=5000, biome="herbe", seed=14, custom_core=2750, mountains=200, hills=80, forest=0.6,
                    peaks=[(0, 3800, 450, 1000)], max_trees=80),
-    "alabasta": dict(big=6200, biome="desert", seed=15, mountains=380, hills=150, forest=0.35,
+    "alabasta": dict(big=6200, biome="desert", seed=15, mountains=380, hills=150, forest=0,  # desert nu
                      peaks=[(0, 4200, 700, 1500), (70, 3900, 450, 900)], max_trees=45),
     "enies": dict(big=4400, biome="herbe", seed=16, custom_core=2300, land=32, mountains=260, hills=80, open=[-90],
                   forest=0.4, peaks=[(0, 3300, 500, 900)], max_trees=70),

@@ -50,6 +50,7 @@ SNOW = reg("snow", _img(T.t_snow), 512, surf="snow", lms=64)
 ROCK = reg("rock", _img(T.t_rock), 512, surf="rock", lms=64)
 ROCK_DARK = reg("rock_dark", _img(T.t_rock, 61, (96, 92, 96), (60, 58, 64)), 512, surf="rock", lms=64)
 ROCK_RED = reg("rock_red", _img(T.t_rock, 62, (186, 82, 60), (130, 52, 40)), 512, surf="rock", lms=128)
+ROCK_SAND = reg("rock_sand", _img(T.t_rock, 63, (204, 162, 106), (148, 110, 68)), 512, surf="rock", lms=64)
 DIRT = reg("dirt", _img(T.t_dirt), 512, surf="dirt", lms=64)
 
 # --- bois ------------------------------------------------------------------

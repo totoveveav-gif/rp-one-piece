@@ -55,7 +55,7 @@ Genere automatiquement par `tools/mapgen/build.py`. Les coordonnees sont en unit
 | Murs de siege (bouton dans le QG) | 3 | Marineford | -7600 | 2060 | 5120 |
 | Porte principale d'Enies Lobby | 2 | Enies Lobby | 8100 | 4948 | -3040 |
 | Tour de l'horloge | 2 | Alabasta | 8000 | -7900 | -3024 |
-| Oasis | 2 | Alabasta | 6300 | -6000 | -3024 |
+| Oasis | 2 | Alabasta | 11300 | -6700 | -3024 |
 | Allee des torii | 3 | Pays de Wano | 8400 | 4100 | 5168 |
 | Pagode | 3 | Pays de Wano | 6700 | 6900 | 5168 |
 | Echafaud de Gol D. Roger | 1 | Loguetown | 7400 | -5050 | -10910 |
