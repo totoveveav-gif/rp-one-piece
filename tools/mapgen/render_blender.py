@@ -370,6 +370,13 @@ def load_shots():
         ux, uy = -cx / d, -cy / d
         loc = (cx + ux * R * 1.75 + uy * R * 0.55, cy + uy * R * 1.75 - ux * R * 0.55, R * 0.75)
         shots[key] = dict(level=m["level"], loc=loc, target=(cx, cy, 350), lens=24)
+        # vues de controle rapprochees (revue des cotes) : 4 angles autour de l'ile
+        a0 = math.atan2(uy, ux)
+        for k in range(4):
+            a = a0 + k * math.pi / 2
+            loc = (cx + math.cos(a) * R * 1.12, cy + math.sin(a) * R * 1.12, R * 0.22)
+            tgt = (cx + math.cos(a) * R * 0.35, cy + math.sin(a) * R * 0.35, 120)
+            shots[f"{key}_revue{k + 1}"] = dict(level=m["level"], loc=loc, target=tgt, lens=22, revue=True)
     for name, v in raw.items():
         v = dict(v)
         if "island" in v:
@@ -436,7 +443,12 @@ def main():
     sc.render.image_settings.file_format = "OPEN_EXR_MULTILAYER"
     sc.render.image_settings.color_depth = "32"
     os.makedirs(a.out, exist_ok=True)
-    names = a.shots.split(",") if a.shots else list(SHOTS)
+    if a.shots == "revue":
+        names = [n for n in SHOTS if SHOTS[n].get("revue")]
+    elif a.shots:
+        names = a.shots.split(",")
+    else:
+        names = [n for n in SHOTS if not SHOTS[n].get("revue")]
     if a.blend:
         for n in SHOTS:
             ob = use_shot(sc, SHOTS[n])

@@ -1,0 +1,7 @@
+"WorldVertexTransition"
+{
+	"$basetexture" "onepiece/rock"
+	"$surfaceprop" "rock"
+	"$basetexture2" "onepiece/snow"
+	"$surfaceprop2" "snow"
+}

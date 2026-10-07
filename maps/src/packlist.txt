@@ -6,8 +6,8 @@ materials/onepiece/bark_palm.vmt
 addon/materials/onepiece/bark_palm.vmt
 materials/onepiece/bark_palm.vtf
 addon/materials/onepiece/bark_palm.vtf
-materials/onepiece/blend_desert_sand_rock_red.vmt
-addon/materials/onepiece/blend_desert_sand_rock_red.vmt
+materials/onepiece/blend_desert_sand_rock.vmt
+addon/materials/onepiece/blend_desert_sand_rock.vmt
 materials/onepiece/blend_desert_sand_sand.vmt
 addon/materials/onepiece/blend_desert_sand_sand.vmt
 materials/onepiece/blend_grass_dark_rock.vmt

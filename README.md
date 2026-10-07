@@ -4,6 +4,24 @@ Une grande map maritime pour serveur RP One Piece, organisée en **3 niveaux (3 
 Dans chaque mer, des îles emblématiques sont éloignées les unes des autres, et **il faut un bateau pour se déplacer**.
 Au bord de chaque mer, **deux énormes rochers** encadrent un passage : un bateau qui passe entre eux arrive dans la mer suivante.
 
+## ⚓ Installer la map dans Garry's Mod (Windows, 3 étapes)
+
+1. **Télécharger** la map :
+   [rp-one-piece.zip](https://github.com/totoveveav-gif/rp-one-piece/archive/refs/heads/claude/serene-knuth-b995j5.zip),
+   puis faire clic droit sur le fichier, « Extraire tout ».
+2. **Double-cliquer sur `INSTALLER.bat`** dans le dossier extrait. Il :
+   - trouve Garry's Mod tout seul (via Steam) ;
+   - compile la map avec les outils fournis avec GMod. **Ça prend de 10 à 40 minutes**, laissez la fenêtre ouverte ;
+   - installe la map dans `garrysmod/maps`, et les textures et scripts dans `garrysmod/addons/rp_onepiece_grandline`.
+3. **Lancer Garry's Mod**, puis « Nouvelle partie » et choisir **rp_onepiece_grandline**.
+   La première fois, ouvrez la console et tapez `sv_cheats 1`, puis `mat_specular 1`, puis `buildcubemaps`
+   (ça calcule les reflets de l'eau, une seule fois).
+
+> Si Garry's Mod n'est pas trouvé, l'installateur demande le chemin du dossier `GarrysMod`.
+> Si `vbsp.exe` manque, dans Steam : clic droit sur Garry's Mod, puis Propriétés, Fichiers installés,
+> « Vérifier l'intégrité des fichiers ».
+> Un journal de l'installation est écrit dans `%TEMP%\rp_onepiece_build\installation.log`.
+
 ![Carte des mers](docs/carte_des_mers.png)
 
 | Niveau | Mer | Îles |

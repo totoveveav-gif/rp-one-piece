@@ -1,0 +1,8 @@
+"LightmappedGeneric"
+{
+	"$basetexture" "onepiece/iron"
+	"$surfaceprop" "metal"
+	"$envmap" "env_cubemap"
+	"$envmaptint" "[.18 .18 .18]"
+	"$normalmapalphaenvmapmask" "0"
+}
