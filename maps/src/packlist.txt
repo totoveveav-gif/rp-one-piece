@@ -10,6 +10,8 @@ materials/onepiece/blend_desert_sand_rock.vmt
 addon/materials/onepiece/blend_desert_sand_rock.vmt
 materials/onepiece/blend_desert_sand_sand.vmt
 addon/materials/onepiece/blend_desert_sand_sand.vmt
+materials/onepiece/blend_desert_sand_sandstone.vmt
+addon/materials/onepiece/blend_desert_sand_sandstone.vmt
 materials/onepiece/blend_grass_dark_rock.vmt
 addon/materials/onepiece/blend_grass_dark_rock.vmt
 materials/onepiece/blend_grass_dark_sand.vmt
@@ -84,6 +86,10 @@ materials/onepiece/fabric_red_white.vmt
 addon/materials/onepiece/fabric_red_white.vmt
 materials/onepiece/fabric_red_white.vtf
 addon/materials/onepiece/fabric_red_white.vtf
+materials/onepiece/flag_baratie.vmt
+addon/materials/onepiece/flag_baratie.vmt
+materials/onepiece/flag_baratie.vtf
+addon/materials/onepiece/flag_baratie.vtf
 materials/onepiece/flag_marine.vmt
 addon/materials/onepiece/flag_marine.vmt
 materials/onepiece/flag_marine.vtf
@@ -212,6 +218,10 @@ materials/onepiece/paving_sand.vmt
 addon/materials/onepiece/paving_sand.vmt
 materials/onepiece/paving_sand.vtf
 addon/materials/onepiece/paving_sand.vtf
+materials/onepiece/pine_green.vmt
+addon/materials/onepiece/pine_green.vmt
+materials/onepiece/pine_green.vtf
+addon/materials/onepiece/pine_green.vtf
 materials/onepiece/pine_snow.vmt
 addon/materials/onepiece/pine_snow.vmt
 materials/onepiece/pine_snow.vtf

@@ -83,8 +83,11 @@ ce qui est bon pour les performances.
 | **Impel Down** (N3) | Forteresse sombre à 8 tours, **bloc de 6 cellules** à barreaux coulissants (verrouillables), bureau du directeur, quai militaire, récifs acérés. |
 | **Pays de Wano** (N3) | **Château du shogun** à 4 étages sur des remparts de pierre, allée de torii rouges, maisons japonaises (izakaya, dojo, forgeron, ryokan), pagode, cerisiers en fleurs. |
 
-Les îles ont un relief naturel : des collines en *displacements* dans les zones libres (dunes à Alabasta, congères à Drum),
-des côtes arrondies et des rochers organiques. Des récifs parsèment chaque mer.
+Chaque île est **grande** (de 7 000 à 14 000 unités de large) avec un vrai relief naturel en *displacements* :
+plages en pente douce, collines, **montagnes**, falaises, **forêts** (feuillus, sapins, palmiers, cerisiers selon l'île)
+et de grands espaces ouverts pour les combats à 20 joueurs et plus. Le relief est aplani automatiquement autour des
+bâtiments, et les textures se fondent (herbe → sable → roche → neige) selon l'altitude et la pente.
+Des récifs parsèment chaque mer.
 
 Toutes les coordonnées (îles, bâtiments, capitaineries, passages, arrivées) sont dans **[LIEUX.md](LIEUX.md)**.
 
@@ -192,7 +195,7 @@ Le générateur vérifie automatiquement :
 Fichiers principaux :
 * `layout.py` : niveaux, position des îles, passages, capitaineries
 * `kit.py` : bâtiments, toits, arbres, navires, rochers, mobilier
-* `relief.py` : collines en displacements
+* `terrain.py` : grand relief naturel des îles (displacements, plages, montagnes, forêts)
 * `materials.py` / `texgen.py` : textures procédurales (VTF/VMT)
 * `render_blender.py` : rendus Blender
 
