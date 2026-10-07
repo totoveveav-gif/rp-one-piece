@@ -57,7 +57,7 @@ def level_shell(w, lv):
                         flat_bottom=L.SEA_FLOOR))
         w.add(G.boulder(x, y, 0, r, r * 0.8, rng.uniform(220, 460), int(rng.integers(1 << 30)), M.ROCK, 26,
                         flat_bottom=-300))
-        if i % 2 == 0:
+        if i % 2 == 0 and lv != 2:   # pas de palmiers pres de l'ile d'hiver (niveau 2)
             K.palm(w, x + r * 0.2, y, rng.uniform(60, 120), 300, seed=lv * 100 + i)
 
 

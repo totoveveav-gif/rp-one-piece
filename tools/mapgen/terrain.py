@@ -22,13 +22,18 @@ POWER = 4
 STEP = CELL // (2 ** POWER)
 BASE = L.SEA_FLOOR + 8          # face de base des carreaux (-760)
 
+# rock_alt : altitudes ou la roche apparait (None = seulement sur les pentes raides)
 BIOMES = {
-    "herbe": dict(main=M.GRASS, beach=M.SAND, rock=M.ROCK, peak=None, trees=("rond", "rond", "pin")),
-    "tropical": dict(main=M.GRASS, beach=M.SAND, rock=M.ROCK, peak=None, trees=("rond", "palmier")),
-    "desert": dict(main=M.DESERT, beach=M.SAND, rock=M.ROCK, peak=None, trees=("palmier",)),
-    "neige": dict(main=M.SNOW, beach=M.SAND, rock=M.ROCK, peak=None, trees=("pin",)),
-    "wano": dict(main=M.GRASS_DARK, beach=M.SAND, rock=M.ROCK, peak=M.SNOW, trees=("sakura", "pin", "sakura")),
-    "roche": dict(main=M.ROCK_DARK, beach=M.SAND, rock=M.ROCK, peak=None, trees=()),
+    "herbe": dict(main=M.GRASS, beach=M.SAND, rock=M.ROCK, rock_alt=(650, 950), peak=None,
+                  trees=("rond", "rond", "pin")),
+    "tropical": dict(main=M.GRASS, beach=M.SAND, rock=M.ROCK, rock_alt=(650, 950), peak=None,
+                     trees=("rond", "palmier")),
+    "desert": dict(main=M.DESERT, beach=M.SAND, rock=M.SANDSTONE, rock_alt=(420, 700), peak=None,
+                   trees=("palmier",)),
+    "neige": dict(main=M.SNOW, beach=M.SAND, rock=M.ROCK, rock_alt=None, peak=None, trees=("pin",)),
+    "wano": dict(main=M.GRASS_DARK, beach=M.SAND, rock=M.ROCK, rock_alt=(600, 900), peak=M.SNOW,
+                 trees=("sakura", "pin", "sakura")),
+    "roche": dict(main=M.ROCK_DARK, beach=M.SAND, rock=M.ROCK, rock_alt=(500, 800), peak=None, trees=()),
 }
 
 
@@ -146,14 +151,15 @@ class Island:
             q = np.hypot(X - px, Y - py) / pr
             relief = relief + ph * np.exp(-q * q * 1.6) * (0.85 + 0.3 * nz.fbm(X, Y, 500, 2))
         if self.custom_core:
-            zone = smooth(self.custom_core + 300, self.custom_core + 1300, r)
+            # autour d'une ville en brushes : relief qui monte doucement, pas de mur colle aux quais
+            zone = smooth(self.custom_core + 700, self.custom_core + 2200, r)
         else:
             zone = smooth(self.core * 0.85, self.core + 900, r)
         h = np.where(d < 0, sea, base + relief * zone * smooth(250, 1100, d))
         if self.custom_core:
             # le centre est construit en brushes : ici le terrain reste sous l'eau
             inner = r - self.custom_core
-            h = np.where(inner < 0, -760, np.minimum(h, -120 + (self.land + 120) * smooth(0, 450, inner)
+            h = np.where(inner < 0, -760, np.minimum(h, -120 + (self.land + 120) * smooth(0, 900, inner)
                                                       + np.maximum(h - self.land, 0)))
         return np.maximum(h, -760)
 
@@ -234,10 +240,13 @@ def _mat_pair(isl, H, S):
     if H.max() < -60:
         return M.SAND, None        # fond marin : meme sable que le reste du fond
     sand = 1 - smooth(28, 60, H)
-    rock = np.clip(smooth(380, 650, H) + smooth(0.6, 0.95, S), 0, 1)
+    alt = bio["rock_alt"]
+    rock = smooth(0.65, 1.0, S) + (smooth(alt[0], alt[1], H) if alt else 0)
+    # pas de roche sous l'eau ni sur la plage (sinon herbe visible sous l'eau)
+    rock = np.clip(rock, 0, 1) * smooth(60, 120, H)
     if bio["peak"] is not None and H.max() > 1050:
         return M.blend(bio["rock"], bio["peak"]), smooth(1050, 1250, H)
-    if sand.max() > 0.02 and rock.max() < 0.3:
+    if sand.max() > 0.02:
         return M.blend(bio["main"], bio["beach"]), sand
     if rock.max() > 0.02:
         return M.blend(bio["main"], bio["rock"]), rock
@@ -346,11 +355,13 @@ def tree_round(w, x, y, z, rng, mat):
     h = rng.uniform(380, 560)
     r = h * rng.uniform(0.32, 0.42)
     a0 = rng.uniform(0, 6.28)
+    # houppier arrondi : deux couronnes decalees + sommet (moins "diamant")
     pts = [(x + math.cos(a0 + a) * 22, y + math.sin(a0 + a) * 22, z - 24) for a in (0, 2.09, 4.19)]
-    pts += [(x + math.cos(a0 + a) * r, y + math.sin(a0 + a) * r, z + h * 0.62)
-            for a in np.linspace(0, 6.28, 5, endpoint=False)]
-    pts += [(x + math.cos(a0 + a + 0.6) * r * 0.55, y + math.sin(a0 + a + 0.6) * r * 0.55, z + h * 0.92)
-            for a in (0, 2.09, 4.19)]
+    pts += [(x + math.cos(a0 + a) * r * 0.8, y + math.sin(a0 + a) * r * 0.8, z + h * 0.5)
+            for a in (0, 1.571, 3.142, 4.712)]
+    pts += [(x + math.cos(a0 + a + 0.785) * r, y + math.sin(a0 + a + 0.785) * r, z + h * 0.72)
+            for a in (0, 1.571, 3.142, 4.712)]
+    pts.append((x, y, z + h * 0.97))
     w.add(G.brush(pts, mat).retexture(_trunk_or(mat)))
 
 
