@@ -28,7 +28,9 @@ def build(w):
     west = pts([(-3300, 380), (-1450, 380), (-1250, -900), (-1550, -2500), (-2250, -3000), (-3200, -2500), (-3650, -900)])
     east = [(2 * X - x, y) for (x, y) in west]
     for poly in (main, west, east):
-        K.quay_terrain(w, G.convex_hull_2d(poly), Z, top=M.GRASS, side=M.STONE_GREY)
+        # bras de la baie paves comme la ville-forteresse de l'anime ; pelouse derriere le QG
+        K.quay_terrain(w, G.convex_hull_2d(poly), Z, top=M.GRASS if poly is main else M.COBBLE,
+                       side=M.STONE_GREY)
     w.marker(name, (X, Y, 0), "ile")
     w.markers[-1]["poly"] = [list(p) for p in G.convex_hull_2d(main + west + east)]
 
