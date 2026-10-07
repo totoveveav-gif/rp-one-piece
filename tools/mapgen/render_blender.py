@@ -451,6 +451,8 @@ def main():
         names = [n for n in SHOTS if not SHOTS[n].get("revue")]
     if a.blend:
         for n in SHOTS:
+            if SHOTS[n].get("revue"):
+                continue   # vues de controle : pas de camera dans la scene exportee
             ob = use_shot(sc, SHOTS[n])
             ob.name = "Camera_" + n
         use_shot(sc, SHOTS["niveau1"])
