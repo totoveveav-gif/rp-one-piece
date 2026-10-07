@@ -72,12 +72,12 @@ ce qui est bon pour les performances.
 | Île | Ce qu'on y trouve |
 |---|---|
 | **Village de Fuchsia** (N1) | Party's Bar (Makino), mairie, maisons, **moulin à vent qui tourne**, champs, mont Corvo et sa forêt avec le repaire de Dadan. |
-| **Baratie** (N1) | Le restaurant flottant en forme de poisson : salle de restaurant, nageoires de combat, escaliers pour sortir de l'eau, capitainerie. |
+| **Baratie** (N1) | Le restaurant flottant en forme de poisson (tête et queue), pavillon à toque de cuisinier : salle de restaurant, nageoires de combat, escaliers pour sortir de l'eau, capitainerie. |
 | **Loguetown** (N1, spawn) | Ville colorée aux rues pavées, **échafaud de Gol D. Roger** sur la place, base de la Marine (Smoker), armurerie Ipponmatsu, tailleur, bar, banque, journal, boulangerie, médecin, port. |
-| **Royaume de Drum** (N2) | Île d'hiver : Drum Rockies (pics cylindriques), **château de Drum** au sommet avec téléphérique, village de Bighorn (taverne, clinique, magasin), sapins enneigés. |
-| **Water Seven** (N2) | Cité sur canaux : 6 quartiers reliés par des ponts, paliers centraux, **grande fontaine**, Galley-La Company, **Dock 1** (chantier naval avec grue), Franky House, gare du Puffing Tom. |
-| **Alabasta** (N2) | Île désertique, **palais d'Alubarna** sur son plateau (dôme doré, 4 tours), tour de l'horloge, ville en grès, marché, casino **Rain Dinners** (pyramide dorée), oasis, dunes. |
-| **Enies Lobby** (N2) | Plateau sur falaises avec cascades, porte principale et grand escalier, tribunal à colonnes, pont de l'Hésitation, **Tour de la Justice**. Au large : les **Portes de la Justice**. |
+| **Royaume de Drum** (N2) | Île d'hiver : 6 Drum Rockies (pics cylindriques à sommet enneigé), **château de Drum** au sommet du plus haut avec téléphérique, village de Bighorn aux toits enneigés (taverne, clinique, magasin), forêt de sapins, collines de neige. |
+| **Water Seven** (N2) | Cité sur canaux : 6 quartiers reliés par des ponts, ville en paliers jusqu'à la **grande fontaine**, Galley-La Company, **Dock 1** (navire en cale sèche, grue), Franky House, gare du Puffing Tom. |
+| **Alabasta** (N2) | Île désertique, **palais d'Alubarna** sur son plateau aux falaises ocre (dôme doré, 4 tours), tour de l'horloge, ville en grès, marché, casino **Rain Dinners** (pyramide dorée) avec son oasis, grand désert de dunes. |
+| **Enies Lobby** (N2) | Plateau rocheux sur falaises avec cascades, porte principale et grand escalier, tribunal à colonnes, pont au-dessus du gouffre vers la **Tour de la Justice** sur son pilier. Au large : les **Portes de la Justice**. |
 | **Archipel de Sabaody** (N3) | 5 mangroves géantes numérotées, bulles flottantes, **grande roue qui tourne**, Maison des ventes, bar de Shakky, atelier de coating, hôtel, boutiques, poste de la Marine, carte des mers. |
 | **Marineford** (N3) | Île en croissant autour d'une baie. **QG de la Marine** avec la tour 海軍 / 正義, place d'Oris et son échafaud, navires de guerre, casernes, arsenal, hôpital, cantine, phares, canons. **Murs de siège** qui sortent de la mer (bouton rouge dans le hall du QG). |
 | **Impel Down** (N3) | Forteresse sombre à 8 tours, **bloc de 6 cellules** à barreaux coulissants (verrouillables), bureau du directeur, quai militaire, récifs acérés. |
