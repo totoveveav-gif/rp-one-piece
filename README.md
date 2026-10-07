@@ -48,6 +48,9 @@ ce qui est bon pour les performances.
 | ![Drum](previews/drum.png) | ![Fuchsia](previews/fuchsia.png) |
 | ![Sabaody](previews/sabaody.png) | ![Red Line](previews/red_line.png) |
 | ![Baratie](previews/baratie.png) | ![Sabaody au sol](previews/sabaody_sol.png) |
+| ![Village de Fuchsia](previews/fuchsia_village.png) | ![Village de Bighorn (Drum)](previews/drum_village.png) |
+| ![Port de Loguetown](previews/loguetown_port.png) | ![Quais de Sabaody](previews/sabaody_quais.png) |
+| ![Arrivée dans la mer suivante](previews/passage_arrivee.png) | |
 
 *Rendus Blender (Cycles) faits à partir de la géométrie exacte des brushes de la map.*
 
@@ -208,7 +211,8 @@ et une caméra par lieu (`Camera_<lieu>`). Pour refaire les rendus : `pip instal
 
 ## Chiffres et limites
 
-* 4 052 brushes (limite Source : 8 192), 41 067 faces de brush (limite : 65 536), 98 displacements et environ 970 entités.
+* 5 110 brushes (limite Source : 8 192), 44 854 faces de brush (limite : 65 536), environ 55 000 plans BSP
+  (limite : 65 536), 997 carreaux de relief en displacements (limite : 2 048) et environ 970 entités.
   Les lumières, les `func_detail` et les `prop_static` disparaissent à la compilation.
 * Presque tout est en `func_detail` et chaque mer est étanche, ce qui rend VVIS rapide et l'affichage léger.
 * Les meubles utilisent uniquement des modèles de Half-Life 2 et PHX, déjà inclus dans Garry's Mod.

@@ -666,7 +666,17 @@ def world_map(markers, levels, w=1024, h=1024, extent=16384):
         for m in markers:
             if m["kind"] != "ile" or m.get("level") != lv:
                 continue
-            d.polygon([P(x, y) for x, y in m["poly"]], fill=(160, 180, 100), outline=ink)
+            if "coast" in m:
+                # grande ile : cote reelle coloree selon le biome, ville en pierre, sommets
+                land = {"desert": (226, 198, 128), "neige": (238, 238, 232), "roche": (146, 138, 126),
+                        "wano": (140, 172, 96)}.get(m.get("biome"), (156, 184, 98))
+                d.polygon([P(x, y) for x, y in m["coast"]], fill=land, outline=ink)
+                d.polygon([P(x, y) for x, y in m.get("town", m["poly"])], fill=(214, 198, 166))
+                for x, y in m.get("peaks", []):
+                    px, py = P(x, y)
+                    d.polygon([(px - 9, py + 6), (px + 9, py + 6), (px, py - 9)], fill=(120, 96, 70), outline=ink)
+            else:
+                d.polygon([P(x, y) for x, y in m["poly"]], fill=(160, 180, 100), outline=ink)
             x, y = P(*m["pos"][:2])
             tw = d.textlength(m["name"], font=fn)
             d.text((x - tw / 2 + 1, y - 9 + 1), m["name"], font=fn, fill=(250, 240, 210))

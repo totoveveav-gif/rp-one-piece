@@ -135,6 +135,24 @@ def spawns(w):
             w.ent("info_player_start", (sx, sy, 64), angles=(0, 90, 0))
 
 
+def island_outlines(w):
+    """Contour reel des grandes iles (cote du relief), biome et sommets : pour la carte des mers."""
+    import numpy as np
+    th = np.linspace(-math.pi, math.pi, 120, endpoint=False)
+    for key, isl in getattr(w, "terrain", {}).items():
+        r = isl.coast(th)
+        for m in w.markers:
+            if m["kind"] == "ile" and m["group"] == L.ISLANDS[key][0]:
+                m["coast"] = [[isl.cx + float(a), isl.cy + float(b)]
+                              for a, b in zip(np.cos(th) * r, np.sin(th) * r)]
+                m["biome"] = L.SHAPES[key]["biome"]
+                # ville : quais en brushes (custom_core) ou coeur plat de rayon core au centre de l'ile
+                m["town"] = m["poly"] if isl.custom_core else [
+                    [isl.cx + math.cos(a) * isl.core, isl.cy + math.sin(a) * isl.core] for a in th]
+                m["peaks"] = [[float(x), float(y)] for x, y, h, rad in isl.peaks
+                              if isl.natural(np.array([x]), np.array([y]))[0] > 300]
+
+
 def write_packlist(path):
     """Liste pour bspzip -addlist (chemin interne / chemin sur disque)."""
     mdir = os.path.join(ROOT, "addon", "materials", "onepiece")
@@ -193,6 +211,7 @@ def build(args):
     from .terrain import build_all
     for k, (n, t) in build_all(w).items():
         print(f"  terrain {k}: {n} carreaux de relief, {t} arbres")
+    island_outlines(w)
     print("construction", round(time.time() - t0, 1), "s", w.counts())
     errors, solved = validate(w)
     for e in errors[:40]:
