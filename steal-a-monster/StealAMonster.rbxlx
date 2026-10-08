@@ -1,0 +1,2388 @@
+<roblox version="4">
+  <Item class="ReplicatedStorage" referent="0">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="Folder" referent="1">
+      <Properties>
+        <string name="Name">Shared</string>
+      </Properties>
+      <Item class="Folder" referent="2">
+        <Properties>
+          <string name="Name">Config</string>
+        </Properties>
+        <Item class="ModuleScript" referent="3">
+          <Properties>
+            <string name="Name">BaseConfig</string>
+            <string name="Source"><![CDATA[--!strict
+-- BaseConfig : les 7 niveaux de base.
+-- Chaque niveau change visuellement la base ET débloque des emplacements de monstres.
+-- (Le coût d'amélioration sera utilisé en Phase 5 ; il est déjà défini ici pour garder
+-- une seule source de vérité.)
+
+export type BaseLevel = {
+	Name: string,
+	Slots: number, -- nombre d'emplacements de monstres débloqués
+	UpgradeCost: number, -- coût pour passer AU niveau suivant (0 = niveau max)
+
+	FloorMaterial: Enum.Material,
+	FloorColor: Color3,
+	WallMaterial: Enum.Material,
+	WallColor: Color3,
+	-- Hauteur au-dessus du sol de la base. Saut par défaut = 7.2 et un socle ajoute 1 stud :
+	-- il faut >= 8.5 pour qu'un mur ne soit PAS sautable (seul le niveau 1 l'est, exprès).
+	WallHeight: number,
+	TrimMaterial: Enum.Material,
+	TrimColor: Color3,
+
+	-- Décorations activées
+	Torches: boolean,
+	Pillars: boolean,
+	Lamps: boolean,
+	Banners: boolean,
+	WallTrim: boolean,
+	Crystals: boolean,
+	Statue: boolean,
+	Aura: boolean,
+}
+
+local BaseConfig = {}
+
+BaseConfig.MAX_SLOTS = 30 -- = 6 colonnes x 5 rangées
+
+BaseConfig.Levels = {
+	{
+		Name = "Starter Camp",
+		Slots = 6,
+		UpgradeCost = 1_500,
+		FloorMaterial = Enum.Material.WoodPlanks,
+		FloorColor = Color3.fromRGB(176, 128, 84),
+		WallMaterial = Enum.Material.WoodPlanks,
+		WallColor = Color3.fromRGB(124, 88, 58),
+		WallHeight = 4,
+		TrimMaterial = Enum.Material.Wood,
+		TrimColor = Color3.fromRGB(95, 66, 42),
+		Torches = true,
+		Pillars = false,
+		Lamps = false,
+		Banners = false,
+		WallTrim = false,
+		Crystals = false,
+		Statue = false,
+		Aura = false,
+	},
+	{
+		Name = "Stone Outpost",
+		Slots = 8,
+		UpgradeCost = 12_000,
+		FloorMaterial = Enum.Material.Slate,
+		FloorColor = Color3.fromRGB(120, 125, 135),
+		WallMaterial = Enum.Material.Cobblestone,
+		WallColor = Color3.fromRGB(150, 150, 160),
+		WallHeight = 9.5,
+		TrimMaterial = Enum.Material.Slate,
+		TrimColor = Color3.fromRGB(95, 98, 108),
+		Torches = true,
+		Pillars = true,
+		Lamps = false,
+		Banners = false,
+		WallTrim = false,
+		Crystals = false,
+		Statue = false,
+		Aura = false,
+	},
+	{
+		Name = "Iron Fortress",
+		Slots = 12,
+		UpgradeCost = 90_000,
+		FloorMaterial = Enum.Material.Pavement,
+		FloorColor = Color3.fromRGB(155, 145, 135),
+		WallMaterial = Enum.Material.Brick,
+		WallColor = Color3.fromRGB(170, 95, 72),
+		WallHeight = 10,
+		TrimMaterial = Enum.Material.DiamondPlate,
+		TrimColor = Color3.fromRGB(110, 115, 125),
+		Torches = false,
+		Pillars = true,
+		Lamps = true,
+		Banners = false,
+		WallTrim = true,
+		Crystals = false,
+		Statue = false,
+		Aura = false,
+	},
+	{
+		Name = "Royal Keep",
+		Slots = 16,
+		UpgradeCost = 600_000,
+		FloorMaterial = Enum.Material.Marble,
+		FloorColor = Color3.fromRGB(230, 228, 235),
+		WallMaterial = Enum.Material.Sandstone,
+		WallColor = Color3.fromRGB(232, 212, 172),
+		WallHeight = 11,
+		TrimMaterial = Enum.Material.Metal,
+		TrimColor = Color3.fromRGB(240, 190, 60),
+		Torches = false,
+		Pillars = true,
+		Lamps = true,
+		Banners = true,
+		WallTrim = true,
+		Crystals = false,
+		Statue = false,
+		Aura = false,
+	},
+	{
+		Name = "Crystal Citadel",
+		Slots = 20,
+		UpgradeCost = 4_000_000,
+		FloorMaterial = Enum.Material.Marble,
+		FloorColor = Color3.fromRGB(205, 225, 255),
+		WallMaterial = Enum.Material.Glacier,
+		WallColor = Color3.fromRGB(175, 215, 255),
+		WallHeight = 12,
+		TrimMaterial = Enum.Material.Neon,
+		TrimColor = Color3.fromRGB(120, 200, 255),
+		Torches = false,
+		Pillars = true,
+		Lamps = true,
+		Banners = true,
+		WallTrim = true,
+		Crystals = true,
+		Statue = false,
+		Aura = false,
+	},
+	{
+		Name = "Monster Palace",
+		Slots = 24,
+		UpgradeCost = 30_000_000,
+		FloorMaterial = Enum.Material.Marble,
+		FloorColor = Color3.fromRGB(250, 242, 225),
+		WallMaterial = Enum.Material.Marble,
+		WallColor = Color3.fromRGB(245, 236, 218),
+		WallHeight = 13,
+		TrimMaterial = Enum.Material.Foil,
+		TrimColor = Color3.fromRGB(255, 200, 60),
+		Torches = false,
+		Pillars = true,
+		Lamps = true,
+		Banners = true,
+		WallTrim = true,
+		Crystals = true,
+		Statue = true,
+		Aura = false,
+	},
+	{
+		Name = "Cosmic Throne",
+		Slots = 30,
+		UpgradeCost = 0,
+		FloorMaterial = Enum.Material.SmoothPlastic,
+		FloorColor = Color3.fromRGB(32, 22, 58),
+		WallMaterial = Enum.Material.ForceField,
+		WallColor = Color3.fromRGB(160, 95, 255),
+		WallHeight = 14,
+		TrimMaterial = Enum.Material.Neon,
+		TrimColor = Color3.fromRGB(255, 220, 90),
+		Torches = false,
+		Pillars = true,
+		Lamps = true,
+		Banners = true,
+		WallTrim = true,
+		Crystals = true,
+		Statue = true,
+		Aura = true,
+	},
+} :: { BaseLevel }
+
+BaseConfig.MAX_LEVEL = #BaseConfig.Levels
+
+-- Ramène n'importe quel nombre dans 1..MAX_LEVEL (NaN -> 1 : NaN ~= NaN en Luau).
+function BaseConfig.Clamp(level: number): number
+	if level ~= level then
+		return 1
+	end
+	return math.clamp(math.floor(level), 1, BaseConfig.MAX_LEVEL)
+end
+
+function BaseConfig.Get(level: number): BaseLevel
+	return BaseConfig.Levels[BaseConfig.Clamp(level)]
+end
+
+return BaseConfig
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="4">
+          <Properties>
+            <string name="Name">GameConfig</string>
+            <string name="Source"><![CDATA[--!strict
+-- GameConfig : réglages globaux du jeu (lus par le serveur ET le client).
+-- Aucune donnée sensible ici : le client peut lire ce module.
+
+local GameConfig = {}
+
+GameConfig.GAME_NAME = "STEAL A MONSTER"
+
+-- Mets la même valeur dans Game Settings > Places > Max Players.
+GameConfig.MAX_BASES = 8
+GameConfig.BASES_PER_SIDE = 4
+
+-- Layout de la map (en studs). La "Monster Road" suit l'axe Z au centre (X = 0).
+GameConfig.ROAD_WIDTH = 28
+GameConfig.ROAD_LENGTH = 470
+GameConfig.ROAD_TO_BASE_GAP = 18
+GameConfig.BASE_SPACING = 88 -- distance entre deux bases du même côté
+
+-- Dimensions d'une base (repère local : -Z = côté route / entrée).
+GameConfig.BASE_WIDTH = 76 -- largeur (parallèle à la route)
+GameConfig.BASE_DEPTH = 60 -- profondeur (perpendiculaire à la route)
+GameConfig.BASE_FLOOR_HEIGHT = 1.2
+GameConfig.BASE_ENTRANCE_WIDTH = 18
+
+-- Couleur d'identité de chaque base (index 1..MAX_BASES).
+GameConfig.BASE_COLORS = {
+	Color3.fromRGB(255, 85, 85), -- rouge
+	Color3.fromRGB(80, 160, 255), -- bleu
+	Color3.fromRGB(90, 220, 120), -- vert
+	Color3.fromRGB(255, 200, 60), -- or
+	Color3.fromRGB(190, 110, 255), -- violet
+	Color3.fromRGB(255, 140, 200), -- rose
+	Color3.fromRGB(70, 225, 225), -- cyan
+	Color3.fromRGB(255, 150, 60), -- orange
+}
+
+-- Commandes de debug (!lvl, !home) : uniquement actives dans Roblox Studio.
+GameConfig.STUDIO_DEBUG_COMMANDS = true
+
+-- Police "cartoon" utilisée partout.
+GameConfig.FONT = Enum.Font.FredokaOne
+
+return GameConfig
+]]></string>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="ModuleScript" referent="5">
+        <Properties>
+          <string name="Name">Net</string>
+          <string name="Source"><![CDATA[--!strict
+-- Net : point d'accès unique aux RemoteEvents / RemoteFunctions.
+-- * Côté serveur : crée le dossier ReplicatedStorage.Remotes et tous les remotes listés.
+-- * Côté client : attend qu'ils existent.
+-- Pour ajouter un remote dans une phase future, il suffit de l'ajouter dans EVENTS / FUNCTIONS.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local EVENTS = {
+	"Notify", -- serveur -> client : (payload: { Kind, Title, Subtitle?, Color?, Duration? })
+}
+
+local FUNCTIONS: { string } = {}
+
+local Net = {}
+
+local folder: Folder
+if RunService:IsServer() then
+	local existing = ReplicatedStorage:FindFirstChild("Remotes")
+	if existing then
+		existing:Destroy()
+	end
+	folder = Instance.new("Folder")
+	folder.Name = "Remotes"
+	for _, name in EVENTS do
+		local remote = Instance.new("RemoteEvent")
+		remote.Name = name
+		remote.Parent = folder
+	end
+	for _, name in FUNCTIONS do
+		local remote = Instance.new("RemoteFunction")
+		remote.Name = name
+		remote.Parent = folder
+	end
+	folder.Parent = ReplicatedStorage
+else
+	folder = ReplicatedStorage:WaitForChild("Remotes") :: Folder
+end
+
+function Net.Event(name: string): RemoteEvent
+	local remote = if RunService:IsServer() then folder:FindFirstChild(name) else folder:WaitForChild(name, 15)
+	assert(remote and remote:IsA("RemoteEvent"), `[Net] RemoteEvent inconnu : {name}`)
+	return remote
+end
+
+function Net.Function(name: string): RemoteFunction
+	local remote = if RunService:IsServer() then folder:FindFirstChild(name) else folder:WaitForChild(name, 15)
+	assert(remote and remote:IsA("RemoteFunction"), `[Net] RemoteFunction inconnue : {name}`)
+	return remote
+end
+
+return Net
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerScriptService" referent="6">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+    </Properties>
+    <Item class="Folder" referent="7">
+      <Properties>
+        <string name="Name">Server</string>
+      </Properties>
+      <Item class="Folder" referent="8">
+        <Properties>
+          <string name="Name">Builders</string>
+        </Properties>
+        <Item class="ModuleScript" referent="9">
+          <Properties>
+            <string name="Name">BaseBuilder</string>
+            <string name="Source"><![CDATA[--!strict
+-- BaseBuilder : construit la géométrie d'une base et ses 7 niveaux visuels.
+-- Ne contient AUCUNE logique de jeu (propriétaire, argent...) : c'est le rôle de BaseService.
+--
+-- Contenu d'un modèle "Base_N" :
+--   Floor        sol (PrimaryPart)
+--   Trim         bordure néon à la couleur de la base
+--   Slots        30 socles "Slot_1".."Slot_30" (attribut Unlocked) + Attachment "MonsterAnchor"
+--   Arch         arche d'entrée + panneau "Sign" (nom du propriétaire)
+--   Gate         barrière laser invisible (activée par le système LOCK BASE en Phase 4)
+--   SpawnPoint   point d'apparition du propriétaire
+--   Deco         décor reconstruit à chaque changement de niveau
+--
+-- Repère local : origine au sol au centre de la base, -Z = côté route (entrée), +Z = fond.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local GameConfig = require(Shared:WaitForChild("Config"):WaitForChild("GameConfig"))
+local BaseConfig = require(Shared:WaitForChild("Config"):WaitForChild("BaseConfig"))
+local PartFactory = require(ServerScriptService:WaitForChild("Server"):WaitForChild("Util"):WaitForChild("PartFactory"))
+
+local Part = PartFactory.Part
+
+local W = GameConfig.BASE_WIDTH
+local D = GameConfig.BASE_DEPTH
+local FT = GameConfig.BASE_FLOOR_HEIGHT -- hauteur du dessus du sol
+local ENTRANCE = GameConfig.BASE_ENTRANCE_WIDTH
+local WALL_T = 1.5
+local ARCH_HEIGHT = 18
+
+-- Grille des socles : 6 colonnes x 5 rangées, remplie du fond vers l'entrée
+-- (les premiers monstres sont les plus éloignés de la route = plus durs à voler).
+local SLOT_COLUMNS = { -30, -18, -6, 6, 18, 30 }
+local SLOT_ROWS = { 22, 12, 2, -8, -18 }
+local SLOT_DIAMETER = 7.5
+local SLOT_HEIGHT = 1
+
+local LOCKED_SLOT_COLOR = Color3.fromRGB(60, 60, 70)
+
+type PartSpec = { Size: Vector3, Offset: CFrame }
+
+local BaseBuilder = {}
+
+local function getOrigin(model: Model): CFrame
+	local floor = model:FindFirstChild("Floor") :: BasePart
+	return floor.CFrame * CFrame.new(0, -FT / 2, 0)
+end
+
+local function accentOf(model: Model): Color3
+	local value = model:GetAttribute("AccentColor")
+	return if typeof(value) == "Color3" then value else Color3.new(1, 1, 1)
+end
+
+-------------------------------------------------------------------------------
+-- Construction initiale (une seule fois par base, au démarrage du serveur)
+-------------------------------------------------------------------------------
+
+local function buildSlots(model: Model, origin: CFrame)
+	local folder = Instance.new("Folder")
+	folder.Name = "Slots"
+	folder.Parent = model
+
+	local index = 0
+	for _, z in SLOT_ROWS do
+		for _, x in SLOT_COLUMNS do
+			index += 1
+			local slot = Part({
+				Name = "Slot_" .. index,
+				Shape = Enum.PartType.Cylinder,
+				Size = Vector3.new(SLOT_HEIGHT, SLOT_DIAMETER, SLOT_DIAMETER),
+				CFrame = origin * CFrame.new(x, FT + SLOT_HEIGHT / 2, z) * CFrame.Angles(0, 0, math.rad(90)),
+				Material = Enum.Material.SmoothPlastic,
+				Parent = folder,
+			})
+			slot:SetAttribute("SlotIndex", index)
+			slot:SetAttribute("Unlocked", false)
+
+			-- Point d'ancrage du monstre (dessus du socle), orienté vers la route :
+			-- les monstres "regardent" les visiteurs. Un Attachment stocke une position RELATIVE
+			-- à sa pièce : on convertit donc la position monde voulue dans le repère du socle.
+			local anchor = Instance.new("Attachment")
+			anchor.Name = "MonsterAnchor"
+			anchor.CFrame = slot.CFrame:ToObjectSpace(origin * CFrame.new(x, FT + SLOT_HEIGHT, z))
+			anchor.Parent = slot
+		end
+	end
+end
+
+local function buildArch(model: Model, origin: CFrame, accent: Color3)
+	local arch = Instance.new("Model")
+	arch.Name = "Arch"
+
+	local stone = Color3.fromRGB(58, 50, 78)
+	for _, side in { -1, 1 } do
+		Part({
+			Name = "Pillar",
+			Size = Vector3.new(3, ARCH_HEIGHT, 3),
+			CFrame = origin * CFrame.new(side * (ENTRANCE / 2 + 1.4), FT + ARCH_HEIGHT / 2, -D / 2 + WALL_T / 2),
+			Material = Enum.Material.Slate,
+			Color = stone,
+			Parent = arch,
+		})
+	end
+
+	local sign = Part({
+		Name = "Sign",
+		Size = Vector3.new(ENTRANCE + 8, 5, 2),
+		CFrame = origin * CFrame.new(0, FT + ARCH_HEIGHT + 1.5, -D / 2 + WALL_T / 2),
+		Material = Enum.Material.Slate,
+		Color = stone,
+		Parent = arch,
+	})
+	-- La face "Front" (-Z local) regarde la route.
+	PartFactory.SurfaceText(sign, Enum.NormalId.Front, "EMPTY BASE", Color3.new(1, 1, 1))
+
+	Part({
+		Name = "SignGlow",
+		Size = Vector3.new(ENTRANCE + 8, 0.5, 2.2),
+		CFrame = origin * CFrame.new(0, FT + ARCH_HEIGHT - 1.25, -D / 2 + WALL_T / 2),
+		Material = Enum.Material.Neon,
+		Color = accent,
+		CanCollide = false,
+		Parent = arch,
+	})
+
+	-- Plaque visible de loin : avatar + nom du propriétaire (lisible sur une vidéo TikTok).
+	local billboard = Instance.new("BillboardGui")
+	billboard.Name = "OwnerBillboard"
+	-- Taille en studs (Scale) : la carte rétrécit avec la distance et n'encombre pas l'écran mobile.
+	billboard.Size = UDim2.fromScale(15, 4)
+	billboard.StudsOffsetWorldSpace = Vector3.new(0, 7, 0)
+	billboard.MaxDistance = 250
+	billboard.LightInfluence = 0
+	billboard.Enabled = false
+
+	local frame = Instance.new("Frame")
+	frame.Name = "Card"
+	frame.Size = UDim2.fromScale(1, 1)
+	frame.BackgroundColor3 = Color3.fromRGB(25, 22, 40)
+	frame.BackgroundTransparency = 0.15
+	frame.Parent = billboard
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0.25, 0)
+	corner.Parent = frame
+	local stroke = Instance.new("UIStroke")
+	stroke.Name = "Stroke"
+	stroke.Color = accent
+	stroke.Thickness = 3
+	stroke.Parent = frame
+
+	local avatar = Instance.new("ImageLabel")
+	avatar.Name = "Avatar"
+	avatar.BackgroundTransparency = 1
+	avatar.Size = UDim2.fromScale(0.217, 0.8125)
+	avatar.Position = UDim2.fromScale(0.025, 0.094)
+	avatar.Parent = frame
+	local avatarCorner = Instance.new("UICorner")
+	avatarCorner.CornerRadius = UDim.new(1, 0)
+	avatarCorner.Parent = avatar
+
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Name = "OwnerName"
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Position = UDim2.fromScale(0.267, 0.094)
+	nameLabel.Size = UDim2.fromScale(0.708, 0.47)
+	nameLabel.Font = GameConfig.FONT
+	nameLabel.TextScaled = true
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.TextColor3 = Color3.new(1, 1, 1)
+	nameLabel.Text = ""
+	nameLabel.Parent = frame
+
+	local levelLabel = Instance.new("TextLabel")
+	levelLabel.Name = "Level"
+	levelLabel.BackgroundTransparency = 1
+	levelLabel.Position = UDim2.fromScale(0.267, 0.5625)
+	levelLabel.Size = UDim2.fromScale(0.708, 0.3125)
+	levelLabel.Font = GameConfig.FONT
+	levelLabel.TextScaled = true
+	levelLabel.TextXAlignment = Enum.TextXAlignment.Left
+	levelLabel.TextColor3 = accent
+	levelLabel.Text = ""
+	levelLabel.Parent = frame
+
+	billboard.Parent = sign
+
+	arch.PrimaryPart = sign
+	arch.Parent = model
+end
+
+function BaseBuilder.Create(index: number, origin: CFrame, accent: Color3, parent: Instance): Model
+	local model = Instance.new("Model")
+	model.Name = "Base_" .. index
+	model:SetAttribute("BaseIndex", index)
+	model:SetAttribute("AccentColor", accent)
+	model:SetAttribute("OwnerUserId", 0)
+	model:SetAttribute("OwnerName", "")
+	model:SetAttribute("Level", 1)
+
+	local floor = Part({
+		Name = "Floor",
+		Size = Vector3.new(W, FT, D),
+		CFrame = origin * CFrame.new(0, FT / 2, 0),
+		Parent = model,
+	})
+	model.PrimaryPart = floor
+
+	-- Bordure néon à la couleur de la base (identification immédiate)
+	local trim = Instance.new("Folder")
+	trim.Name = "Trim"
+	trim.Parent = model
+	local trimSpecs: { PartSpec } = {
+		-- Collées contre la face intérieure des murs (visibles, pas de scintillement)
+		{ Size = Vector3.new(W - 2 * WALL_T, 0.3, 1), Offset = CFrame.new(0, FT + 0.15, D / 2 - WALL_T - 0.5) },
+		{ Size = Vector3.new(1, 0.3, D - 2 * WALL_T), Offset = CFrame.new(-(W / 2 - WALL_T - 0.5), FT + 0.15, 0) },
+		{ Size = Vector3.new(1, 0.3, D - 2 * WALL_T), Offset = CFrame.new(W / 2 - WALL_T - 0.5, FT + 0.15, 0) },
+		{ Size = Vector3.new(ENTRANCE, 0.3, 2), Offset = CFrame.new(0, FT + 0.15, -D / 2 + 1) },
+	}
+	for _, spec in trimSpecs do
+		Part({
+			Name = "TrimStrip",
+			Size = spec.Size,
+			CFrame = origin * spec.Offset,
+			Material = Enum.Material.Neon,
+			Color = accent,
+			CanCollide = false,
+			Parent = trim,
+		})
+	end
+
+	buildSlots(model, origin)
+	buildArch(model, origin, accent)
+
+	local gate = Part({
+		Name = "Gate",
+		Size = Vector3.new(ENTRANCE, 12, 0.6),
+		CFrame = origin * CFrame.new(0, FT + 6, -D / 2 + WALL_T / 2),
+		Material = Enum.Material.Neon,
+		Color = Color3.fromRGB(255, 60, 60),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		Parent = model,
+	})
+	gate:SetAttribute("Active", false)
+
+	-- Le joueur apparaît près de l'entrée en regardant ses monstres.
+	Part({
+		Name = "SpawnPoint",
+		Size = Vector3.new(4, 1, 4),
+		CFrame = origin * CFrame.new(0, FT + 0.5, -D / 2 + 8),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		Parent = model,
+	})
+
+	local deco = Instance.new("Folder")
+	deco.Name = "Deco"
+	deco.Parent = model
+
+	model.Parent = parent
+	BaseBuilder.ApplyLevel(model, 1)
+	return model
+end
+
+-------------------------------------------------------------------------------
+-- Décor par niveau
+-------------------------------------------------------------------------------
+
+local function buildWalls(deco: Folder, origin: CFrame, level: BaseConfig.BaseLevel)
+	local h = level.WallHeight
+	local y = FT + h / 2
+	local side = (W - ENTRANCE) / 2
+	local specs: { PartSpec } = {
+		{ Size = Vector3.new(W, h, WALL_T), Offset = CFrame.new(0, y, D / 2 - WALL_T / 2) }, -- fond
+		{ Size = Vector3.new(WALL_T, h, D), Offset = CFrame.new(-W / 2 + WALL_T / 2, y, 0) }, -- gauche
+		{ Size = Vector3.new(WALL_T, h, D), Offset = CFrame.new(W / 2 - WALL_T / 2, y, 0) }, -- droite
+		{ Size = Vector3.new(side, h, WALL_T), Offset = CFrame.new(-(ENTRANCE / 2 + side / 2), y, -D / 2 + WALL_T / 2) }, -- avant gauche
+		{ Size = Vector3.new(side, h, WALL_T), Offset = CFrame.new(ENTRANCE / 2 + side / 2, y, -D / 2 + WALL_T / 2) }, -- avant droite
+	}
+	for _, spec in specs do
+		Part({
+			Name = "Wall",
+			Size = spec.Size,
+			CFrame = origin * spec.Offset,
+			Material = level.WallMaterial,
+			Color = level.WallColor,
+			Parent = deco,
+		})
+		if level.WallTrim then
+			Part({
+				Name = "WallTrim",
+				Size = spec.Size * Vector3.new(1, 0, 1) + Vector3.new(0.6, 0.8, 0.6),
+				CFrame = origin * spec.Offset * CFrame.new(0, h / 2 + 0.4, 0),
+				Material = level.TrimMaterial,
+				Color = level.TrimColor,
+				Parent = deco,
+			})
+		end
+	end
+end
+
+local CORNERS = {
+	Vector2.new(-W / 2, -D / 2),
+	Vector2.new(W / 2, -D / 2),
+	Vector2.new(-W / 2, D / 2),
+	Vector2.new(W / 2, D / 2),
+}
+
+local function buildPillars(deco: Folder, origin: CFrame, level: BaseConfig.BaseLevel)
+	-- Centrés sur les coins du sol : ils partent du sol du terrain (y = 0) pour ne pas flotter.
+	local top = FT + level.WallHeight + 3
+	for _, corner in CORNERS do
+		Part({
+			Name = "Pillar",
+			Size = Vector3.new(3.5, top, 3.5),
+			CFrame = origin * CFrame.new(corner.X, top / 2, corner.Y),
+			Material = level.TrimMaterial == Enum.Material.Neon and Enum.Material.Marble or level.TrimMaterial,
+			Color = level.TrimColor,
+			Parent = deco,
+		})
+	end
+end
+
+local function buildTorches(deco: Folder, origin: CFrame)
+	for _, side in { -1, 1 } do
+		local x = side * (ENTRANCE / 2 + 4)
+		Part({
+			Name = "TorchStick",
+			Size = Vector3.new(0.6, FT + 6, 0.6),
+			CFrame = origin * CFrame.new(x, (FT + 6) / 2, -D / 2 - 1), -- planté dans le trottoir
+			Material = Enum.Material.Wood,
+			Color = Color3.fromRGB(100, 70, 45),
+			CanCollide = false, -- sinon il sert d'échelle pour passer le mur
+			Parent = deco,
+		})
+		local flame = Part({
+			Name = "TorchFlame",
+			Size = Vector3.new(1.1, 1.4, 1.1),
+			CFrame = origin * CFrame.new(x, FT + 6.6, -D / 2 - 1),
+			Material = Enum.Material.Neon,
+			Color = Color3.fromRGB(255, 150, 50),
+			CanCollide = false,
+			Parent = deco,
+		})
+		PartFactory.Light(flame, Color3.fromRGB(255, 160, 80), 14, 1.5)
+	end
+end
+
+local function buildLamps(deco: Folder, origin: CFrame, accent: Color3)
+	for _, corner in CORNERS do
+		-- Légèrement à l'intérieur des coins
+		local x = corner.X * 0.9
+		local z = corner.Y * 0.85
+		Part({
+			Name = "LampPole",
+			Size = Vector3.new(0.7, 8, 0.7),
+			CFrame = origin * CFrame.new(x, FT + 4, z),
+			Material = Enum.Material.Metal,
+			Color = Color3.fromRGB(45, 45, 55),
+			CanCollide = false, -- pas d'échelle pour s'échapper par-dessus le mur
+			Parent = deco,
+		})
+		local bulb = Part({
+			Name = "LampBulb",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(2, 2, 2),
+			CFrame = origin * CFrame.new(x, FT + 8.6, z),
+			Material = Enum.Material.Neon,
+			Color = accent,
+			CanCollide = false,
+			Parent = deco,
+		})
+		PartFactory.Light(bulb, accent, 16, 1)
+	end
+end
+
+local function buildBanners(deco: Folder, origin: CFrame, level: BaseConfig.BaseLevel, accent: Color3)
+	for _, x in { -24, 0, 24 } do
+		local height = math.min(level.WallHeight - 1, 10)
+		Part({
+			Name = "Banner",
+			Size = Vector3.new(6, height, 0.3),
+			CFrame = origin * CFrame.new(x, FT + level.WallHeight - height / 2 - 0.5, D / 2 - WALL_T - 0.2),
+			Material = Enum.Material.Fabric,
+			Color = accent,
+			CanCollide = false,
+			Parent = deco,
+		})
+		Part({
+			Name = "BannerRod",
+			Size = Vector3.new(7, 0.4, 0.4),
+			CFrame = origin * CFrame.new(x, FT + level.WallHeight - 0.3, D / 2 - WALL_T - 0.2),
+			Material = level.TrimMaterial,
+			Color = level.TrimColor,
+			Parent = deco,
+		})
+	end
+end
+
+local function buildCrystals(deco: Folder, origin: CFrame, level: BaseConfig.BaseLevel, accent: Color3)
+	for _, corner in CORNERS do
+		local h = level.WallHeight + 8
+		local crystal = Part({
+			Name = "Crystal",
+			Size = Vector3.new(3, h, 3),
+			CFrame = origin
+				* CFrame.new(corner.X, FT + level.WallHeight + 3 + h / 2, corner.Y)
+				* CFrame.Angles(0, math.rad(45), math.rad(8)),
+			Material = Enum.Material.Neon,
+			Color = accent,
+			Transparency = 0.15,
+			CanCollide = false,
+			CastShadow = false,
+			Parent = deco,
+		})
+		PartFactory.Sparkles(crystal, accent, 2)
+	end
+end
+
+-- Statue géante d'un monstre derrière la base : posée sur un socle haut pour dépasser des murs
+-- et être visible de toute la map. Seul le socle (trop haut pour être sauté) est solide :
+-- le reste ne doit pas servir d'escalier pour entrer par-dessus le mur du fond.
+local function buildStatue(deco: Folder, origin: CFrame, level: BaseConfig.BaseLevel, accent: Color3)
+	local lift = level.WallHeight - 2
+	local base = origin * CFrame.new(0, lift, D / 2 + 7)
+	local gold = level.TrimColor
+	local material = level.TrimMaterial == Enum.Material.Neon and Enum.Material.Foil or level.TrimMaterial
+	Part({
+		Name = "StatuePedestal",
+		Size = Vector3.new(12, lift + 4, 10),
+		CFrame = origin * CFrame.new(0, (lift + 4) / 2, D / 2 + 7),
+		Material = Enum.Material.Marble,
+		Color = Color3.fromRGB(240, 236, 228),
+		Parent = deco,
+	})
+	Part({
+		Name = "StatueBody",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.new(11, 11, 11),
+		CFrame = base * CFrame.new(0, 9.5, 0),
+		Material = material,
+		Color = gold,
+		CanCollide = false,
+		Parent = deco,
+	})
+	Part({
+		Name = "StatueHead",
+		Shape = Enum.PartType.Ball,
+		Size = Vector3.new(8, 8, 8),
+		CFrame = base * CFrame.new(0, 17, -1),
+		Material = material,
+		Color = gold,
+		CanCollide = false,
+		Parent = deco,
+	})
+	for _, side in { -1, 1 } do
+		PartFactory.Wedge({
+			Name = "StatueHorn",
+			Size = Vector3.new(1.2, 4, 2),
+			CFrame = base * CFrame.new(side * 2.6, 22, -1) * CFrame.Angles(0, math.rad(180), math.rad(-15 * side)),
+			Material = material,
+			Color = gold,
+			CanCollide = false,
+			Parent = deco,
+		})
+		Part({
+			Name = "StatueEye",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(1.6, 1.6, 1.6),
+			CFrame = base * CFrame.new(side * 1.7, 17.8, -4.6),
+			Material = Enum.Material.Neon,
+			Color = accent,
+			CanCollide = false,
+			Parent = deco,
+		})
+	end
+end
+
+-- Anneau cosmique flottant au-dessus de la base (niveau 7), fait de segments néon.
+local function buildAura(deco: Folder, origin: CFrame, level: BaseConfig.BaseLevel, accent: Color3)
+	local radius = W / 2 + 4
+	local segments = 32
+	local y = FT + level.WallHeight + 10
+	local length = 2 * math.pi * radius / segments + 0.3 -- léger chevauchement : pas de trous
+	for i = 1, segments do
+		local angle = (i / segments) * 2 * math.pi
+		local position = Vector3.new(math.cos(angle) * radius, y, math.sin(angle) * radius)
+		local tangent = Vector3.new(-math.sin(angle), 0, math.cos(angle))
+		local segment = Part({
+			Name = "AuraRing",
+			Size = Vector3.new(0.8, 0.8, length),
+			CFrame = origin * CFrame.lookAt(position, position + tangent),
+			Material = Enum.Material.Neon,
+			Color = accent,
+			Transparency = 0.25,
+			CanCollide = false,
+			CanQuery = false,
+			CastShadow = false,
+			Parent = deco,
+		})
+		if i % 8 == 0 then
+			PartFactory.Sparkles(segment, level.TrimColor, 2)
+		end
+	end
+end
+
+-- Applique (ou ré-applique) le visuel d'un niveau. Appelé par BaseService.
+function BaseBuilder.ApplyLevel(model: Model, levelNumber: number)
+	local clamped = BaseConfig.Clamp(levelNumber)
+	local level = BaseConfig.Get(clamped)
+	local origin = getOrigin(model)
+	local accent = accentOf(model)
+
+	local floor = model:FindFirstChild("Floor") :: BasePart
+	floor.Material = level.FloorMaterial
+	floor.Color = level.FloorColor
+
+	local deco = model:FindFirstChild("Deco") :: Folder
+	deco:ClearAllChildren()
+
+	buildWalls(deco, origin, level)
+	if level.Pillars then
+		buildPillars(deco, origin, level)
+	end
+	if level.Torches then
+		buildTorches(deco, origin)
+	end
+	if level.Lamps then
+		buildLamps(deco, origin, accent)
+	end
+	if level.Banners then
+		buildBanners(deco, origin, level, accent)
+	end
+	if level.Crystals then
+		buildCrystals(deco, origin, level, accent)
+	end
+	if level.Statue then
+		buildStatue(deco, origin, level, accent)
+	end
+	if level.Aura then
+		buildAura(deco, origin, level, accent)
+	end
+
+	-- Socles : débloqués = couleur de la base, verrouillés = sombres et translucides.
+	local slots = model:FindFirstChild("Slots") :: Folder
+	for _, slot in slots:GetChildren() do
+		if slot:IsA("BasePart") then
+			local index = slot:GetAttribute("SlotIndex") :: number
+			local unlocked = index <= level.Slots
+			slot:SetAttribute("Unlocked", unlocked)
+			slot.Color = if unlocked then accent else LOCKED_SLOT_COLOR
+			slot.Material = if unlocked then Enum.Material.Neon else Enum.Material.SmoothPlastic
+			slot.Transparency = if unlocked then 0.1 else 0.7
+		end
+	end
+
+	model:SetAttribute("Level", clamped)
+	BaseBuilder.RefreshSign(model)
+end
+
+-- Met à jour panneau + plaque au-dessus de l'entrée.
+function BaseBuilder.RefreshSign(model: Model)
+	local arch = model:FindFirstChild("Arch") :: Model
+	local sign = arch:FindFirstChild("Sign") :: BasePart
+	local surfaceLabel = (sign:FindFirstChild("Text_Front") :: SurfaceGui):FindFirstChild("Label") :: TextLabel
+	local billboard = sign:FindFirstChild("OwnerBillboard") :: BillboardGui
+	local card = billboard:FindFirstChild("Card") :: Frame
+
+	local ownerId = model:GetAttribute("OwnerUserId") :: number
+	local ownerName = model:GetAttribute("OwnerName") :: string
+	local levelNumber = model:GetAttribute("Level") :: number
+	local level = BaseConfig.Get(levelNumber)
+	local accent = accentOf(model)
+
+	if ownerId ~= 0 then
+		surfaceLabel.Text = string.upper(ownerName) .. "'S BASE"
+		surfaceLabel.TextColor3 = accent
+		billboard.Enabled = true
+		local avatar = card:FindFirstChild("Avatar") :: ImageLabel
+		local nameLabel = card:FindFirstChild("OwnerName") :: TextLabel
+		local levelLabel = card:FindFirstChild("Level") :: TextLabel
+		avatar.Image = `rbxthumb://type=AvatarHeadShot&id={ownerId}&w=150&h=150`
+		nameLabel.Text = ownerName
+		levelLabel.Text = `LVL {levelNumber} • {string.upper(level.Name)}`
+	else
+		surfaceLabel.Text = "EMPTY BASE"
+		surfaceLabel.TextColor3 = Color3.new(1, 1, 1)
+		billboard.Enabled = false
+	end
+end
+
+return BaseBuilder
+]]></string>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Script" referent="10">
+        <Properties>
+          <string name="Name">Main</string>
+          <token name="RunContext">0</token>
+          <string name="Source"><![CDATA[--!strict
+-- Main : point d'entrée unique du serveur.
+-- Charge les services dans un ordre fixe, appelle Init() sur tous, puis Start() sur tous.
+--   Init()  : construire / préparer (pas encore de joueurs gérés)
+--   Start() : brancher les événements joueurs
+-- Pour ajouter un service dans une phase future : créer le module dans "Services"
+-- puis ajouter son nom dans SERVICE_ORDER.
+
+local Services = script.Parent:WaitForChild("Services")
+
+local SERVICE_ORDER = {
+	"MapService",
+	"BaseService",
+}
+
+type Service = {
+	Init: ((self: any) -> ())?,
+	Start: ((self: any) -> ())?,
+}
+
+local loaded: { [string]: Service } = {}
+
+for _, name in SERVICE_ORDER do
+	local module = Services:WaitForChild(name, 10)
+	assert(module and module:IsA("ModuleScript"), `[Main] Service introuvable : {name}`)
+	loaded[name] = (require :: any)(module)
+end
+
+for _, name in SERVICE_ORDER do
+	local service = loaded[name]
+	local init = service.Init
+	if init then
+		init(service)
+	end
+end
+
+for _, name in SERVICE_ORDER do
+	local service = loaded[name]
+	local start = service.Start
+	if start then
+		start(service)
+	end
+end
+
+print("[Steal a Monster] Serveur prêt ✅")
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="11">
+        <Properties>
+          <string name="Name">Services</string>
+        </Properties>
+        <Item class="ModuleScript" referent="12">
+          <Properties>
+            <string name="Name">BaseService</string>
+            <string name="Source"><![CDATA[--!strict
+-- BaseService : crée les 8 bases, attribue une base à chaque joueur, le fait apparaître
+-- dedans à chaque spawn, et libère la base quand il quitte le serveur.
+--
+-- Tout est décidé côté serveur : le client ne peut jamais choisir ni modifier sa base.
+--
+-- API publique (utilisée par les phases suivantes) :
+--   BaseService.GetPlot(player)            -> Plot?
+--   BaseService.GetLevel(player)           -> number
+--   BaseService.SetLevel(player, level)
+--   BaseService.GetUnlockedSlots(player)   -> { BasePart }
+--   BaseService.SendHome(player)
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local ServerScriptService = game:GetService("ServerScriptService")
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local GameConfig = require(Shared:WaitForChild("Config"):WaitForChild("GameConfig"))
+local BaseConfig = require(Shared:WaitForChild("Config"):WaitForChild("BaseConfig"))
+local Net = require(Shared:WaitForChild("Net"))
+local BaseBuilder = require(ServerScriptService:WaitForChild("Server"):WaitForChild("Builders"):WaitForChild("BaseBuilder"))
+
+export type Plot = {
+	Index: number,
+	Model: Model,
+	Origin: CFrame,
+	Owner: Player?,
+}
+
+local BaseService = {}
+
+local plots: { Plot } = {}
+local plotByPlayer: { [Player]: Plot } = {}
+
+local notifyRemote = Net.Event("Notify")
+
+local function notify(player: Player, payload: { [string]: any })
+	notifyRemote:FireClient(player, payload)
+end
+
+-- Position d'une base : 4 de chaque côté de la Monster Road, entrée tournée vers la route.
+local function computeOrigin(index: number): CFrame
+	local perSide = GameConfig.BASES_PER_SIDE
+	local side = if index <= perSide then -1 else 1
+	local row = (index - 1) % perSide
+	local x = side * (GameConfig.ROAD_WIDTH / 2 + GameConfig.ROAD_TO_BASE_GAP + GameConfig.BASE_DEPTH / 2)
+	local z = (row - (perSide - 1) / 2) * GameConfig.BASE_SPACING
+	local center = Vector3.new(x, 0, z)
+	-- LookVector (-Z local) pointe vers la route.
+	return CFrame.lookAt(center, center + Vector3.new(-side, 0, 0))
+end
+
+-- Choisit une base libre. Si un ami est déjà sur le serveur, on prend la base libre la plus
+-- proche de la sienne : jouer avec ses amis doit être naturel (voisins = entraide / rivalité).
+local function choosePlot(player: Player): Plot?
+	local friendPlots: { Plot } = {}
+	for _, other in Players:GetPlayers() do
+		local otherPlot = plotByPlayer[other]
+		if other ~= player and otherPlot then
+			local ok, isFriend = pcall(player.IsFriendsWithAsync, player, other.UserId)
+			if ok and isFriend then
+				table.insert(friendPlots, otherPlot)
+			end
+		end
+	end
+
+	-- IsFriendsWithAsync peut prendre du temps : on calcule les bases libres APRÈS les appels réseau.
+	local best: Plot? = nil
+	local bestDistance = math.huge
+	for _, plot in plots do
+		if plot.Owner == nil then
+			if #friendPlots == 0 then
+				return plot
+			end
+			for _, friendPlot in friendPlots do
+				local distance = (plot.Origin.Position - friendPlot.Origin.Position).Magnitude
+				if distance < bestDistance then
+					bestDistance = distance
+					best = plot
+				end
+			end
+		end
+	end
+	return best
+end
+
+local function getSpawnCFrame(plot: Plot): CFrame
+	local spawnPoint = plot.Model:FindFirstChild("SpawnPoint") :: BasePart
+	-- Le joueur regarde vers le fond de la base (ses monstres), pas vers la route.
+	return spawnPoint.CFrame * CFrame.Angles(0, math.rad(180), 0) + Vector3.new(0, 3, 0)
+end
+
+function BaseService.SendHome(player: Player)
+	local plot = plotByPlayer[player]
+	local character = player.Character
+	if not plot or not character or not character.Parent then
+		return
+	end
+	if not character:FindFirstChild("HumanoidRootPart") then
+		return
+	end
+	character:PivotTo(getSpawnCFrame(plot))
+end
+
+function BaseService.GetPlot(player: Player): Plot?
+	return plotByPlayer[player]
+end
+
+function BaseService.GetLevel(player: Player): number
+	local plot = plotByPlayer[player]
+	if not plot then
+		return 1
+	end
+	return plot.Model:GetAttribute("Level") :: number
+end
+
+function BaseService.SetLevel(player: Player, level: number)
+	local plot = plotByPlayer[player]
+	if not plot then
+		return
+	end
+	BaseBuilder.ApplyLevel(plot.Model, level)
+end
+
+function BaseService.GetUnlockedSlots(player: Player): { BasePart }
+	local result: { BasePart } = {}
+	local plot = plotByPlayer[player]
+	if not plot then
+		return result
+	end
+	local slots = plot.Model:FindFirstChild("Slots") :: Folder
+	for _, slot in slots:GetChildren() do
+		if slot:IsA("BasePart") and slot:GetAttribute("Unlocked") == true then
+			table.insert(result, slot)
+		end
+	end
+	table.sort(result, function(a, b)
+		return (a:GetAttribute("SlotIndex") :: number) < (b:GetAttribute("SlotIndex") :: number)
+	end)
+	return result
+end
+
+local function assign(player: Player)
+	if plotByPlayer[player] then
+		return
+	end
+
+	local plot = choosePlot(player)
+	if player.Parent ~= Players then
+		return -- le joueur est parti pendant le choix
+	end
+	if not plot then
+		warn(`[BaseService] Aucune base libre pour {player.Name}. Mets Max Players = {GameConfig.MAX_BASES}.`)
+		notify(player, {
+			Kind = "Banner",
+			Title = "SERVER FULL",
+			Subtitle = "No free base. Try another server!",
+			Color = Color3.fromRGB(255, 90, 90),
+		})
+		return
+	end
+
+	plot.Owner = player
+	plotByPlayer[player] = plot
+	plot.Model:SetAttribute("OwnerUserId", player.UserId)
+	plot.Model:SetAttribute("OwnerName", player.DisplayName)
+	-- Phase 9 : le niveau viendra des données sauvegardées.
+	BaseBuilder.ApplyLevel(plot.Model, 1)
+
+	-- Attribut répliqué : le client s'en sert pour afficher le marqueur "YOUR BASE".
+	player:SetAttribute("BaseIndex", plot.Index)
+
+	BaseService.SendHome(player)
+
+	notify(player, {
+		Kind = "Banner",
+		Title = "🏠 THIS IS YOUR BASE!",
+		Subtitle = "Fill it with monsters. Protect it from thieves.",
+		Color = plot.Model:GetAttribute("AccentColor"),
+		Duration = 3.5,
+	})
+end
+
+local function release(player: Player)
+	local plot = plotByPlayer[player]
+	if not plot then
+		return
+	end
+	plotByPlayer[player] = nil
+	plot.Owner = nil
+	plot.Model:SetAttribute("OwnerUserId", 0)
+	plot.Model:SetAttribute("OwnerName", "")
+	BaseBuilder.ApplyLevel(plot.Model, 1)
+end
+
+local function onCharacterAdded(player: Player, character: Model)
+	-- On attend que le personnage soit dans le Workspace et physiquement prêt,
+	-- sinon le spawn par défaut de Roblox écrase notre téléportation.
+	if not character.Parent then
+		character.AncestryChanged:Wait()
+	end
+	if not character:WaitForChild("HumanoidRootPart", 10) then
+		return
+	end
+	task.wait()
+	if player.Character == character then
+		BaseService.SendHome(player)
+	end
+end
+
+-- Commandes de test (Roblox Studio uniquement) : "!lvl 1".."!lvl 7" et "!home".
+local function onDebugChat(player: Player, message: string)
+	local words = string.split(string.lower(message), " ")
+	if words[1] == "!lvl" then
+		local level = tonumber(words[2])
+		if level then
+			BaseService.SetLevel(player, level)
+			local applied = BaseService.GetLevel(player)
+			notify(player, {
+				Kind = "Toast",
+				Title = `BASE LEVEL {applied} • {string.upper(BaseConfig.Get(applied).Name)}`,
+				Color = Color3.fromRGB(255, 205, 70),
+			})
+		end
+	elseif words[1] == "!home" then
+		BaseService.SendHome(player)
+	end
+end
+
+local function onPlayerAdded(player: Player)
+	player.CharacterAdded:Connect(function(character)
+		onCharacterAdded(player, character)
+	end)
+	if GameConfig.STUDIO_DEBUG_COMMANDS and RunService:IsStudio() then
+		player.Chatted:Connect(function(message)
+			onDebugChat(player, message)
+		end)
+	end
+	-- assign() téléporte le joueur si son personnage existe déjà ; sinon CharacterAdded s'en charge.
+	assign(player)
+end
+
+function BaseService:Init()
+	local existing = workspace:FindFirstChild("Bases")
+	if existing then
+		existing:Destroy()
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = "Bases"
+	folder.Parent = workspace
+
+	for index = 1, GameConfig.MAX_BASES do
+		local origin = computeOrigin(index)
+		local accent = GameConfig.BASE_COLORS[index] or Color3.new(1, 1, 1)
+		local model = BaseBuilder.Create(index, origin, accent, folder)
+		table.insert(plots, {
+			Index = index,
+			Model = model,
+			Origin = origin,
+			Owner = nil,
+		})
+	end
+end
+
+function BaseService:Start()
+	Players.PlayerAdded:Connect(onPlayerAdded)
+	Players.PlayerRemoving:Connect(release)
+	-- Joueurs déjà présents (cas du Play Solo dans Studio, où le joueur peut arriver avant ce script)
+	for _, player in Players:GetPlayers() do
+		task.spawn(onPlayerAdded, player)
+	end
+end
+
+return BaseService
+]]></string>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="13">
+          <Properties>
+            <string name="Name">MapService</string>
+            <string name="Source"><![CDATA[--!strict
+-- MapService : génère toute la map par script au démarrage du serveur.
+-- Rien à construire à la main dans Studio.
+--
+-- Workspace
+-- ├── Map          (sol, trottoirs, arbres, lampadaires, limites, spawn de secours)
+-- ├── MonsterArea  (Monster Road + portail + marqueurs RoadStart / RoadEnd)
+-- ├── EventArea    (arène des événements live + marqueur ArenaCenter)
+-- └── Bases        (créé par BaseService)
+
+local Lighting = game:GetService("Lighting")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local GameConfig = require(Shared:WaitForChild("Config"):WaitForChild("GameConfig"))
+local PartFactory = require(ServerScriptService:WaitForChild("Server"):WaitForChild("Util"):WaitForChild("PartFactory"))
+
+local Part = PartFactory.Part
+
+-- Couleurs de la direction artistique (cartoon, saturé, lisible)
+local COLORS = {
+	Grass = Color3.fromRGB(110, 196, 88),
+	Sidewalk = Color3.fromRGB(232, 222, 196),
+	Road = Color3.fromRGB(68, 48, 108),
+	RoadGlow = Color3.fromRGB(195, 120, 255),
+	PortalStone = Color3.fromRGB(48, 38, 74),
+	PortalGlow = Color3.fromRGB(160, 80, 255),
+	Gold = Color3.fromRGB(255, 205, 70),
+	LampMetal = Color3.fromRGB(40, 40, 52),
+	LampLight = Color3.fromRGB(255, 214, 150),
+	ArenaFloor = Color3.fromRGB(64, 62, 86),
+	White = Color3.new(1, 1, 1),
+}
+
+export type Anchors = {
+	RoadStart: BasePart,
+	RoadEnd: BasePart,
+	ArenaCenter: BasePart,
+	FallbackSpawn: SpawnLocation,
+}
+
+local MapService = {}
+MapService.Anchors = (nil :: any) :: Anchors
+
+local HALF_ROAD = GameConfig.ROAD_WIDTH / 2
+local HALF_LENGTH = GameConfig.ROAD_LENGTH / 2
+local PORTAL_Z = -HALF_LENGTH - 15
+local EXIT_Z = HALF_LENGTH + 15
+local ARENA_Z = EXIT_Z + 70
+local ARENA_RADIUS = 45
+-- La route visuelle va du portail jusqu'à l'arche de l'Event Zone (sans bande d'herbe aux bouts).
+local ROAD_VISUAL_LENGTH = EXIT_Z - PORTAL_Z
+
+-- Taille du terrain
+local GROUND_HALF_X = 220
+local GROUND_MIN_Z = PORTAL_Z - 70
+local GROUND_MAX_Z = ARENA_Z + ARENA_RADIUS + 35
+
+local function marker(name: string, position: Vector3, parent: Instance): Part
+	return Part({
+		Name = name,
+		Size = Vector3.new(2, 2, 2),
+		CFrame = CFrame.new(position),
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		Parent = parent,
+	})
+end
+
+-- Supprime le Baseplate / SpawnLocation du template Studio par défaut.
+local function cleanupTemplate()
+	for _, name in { "Baseplate", "SpawnLocation", "Map", "MonsterArea", "EventArea" } do
+		local existing = workspace:FindFirstChild(name)
+		if existing then
+			existing:Destroy()
+		end
+	end
+end
+
+local function setupLighting()
+	Lighting.ClockTime = 14.5
+	Lighting.Brightness = 2.2
+	Lighting.Ambient = Color3.fromRGB(70, 70, 90)
+	Lighting.OutdoorAmbient = Color3.fromRGB(140, 140, 160)
+	Lighting.EnvironmentDiffuseScale = 0.5
+	Lighting.EnvironmentSpecularScale = 0.5
+	Lighting.GlobalShadows = true
+
+	for _, child in Lighting:GetChildren() do
+		if child:IsA("Atmosphere") or child:IsA("PostEffect") then
+			child:Destroy()
+		end
+	end
+
+	local atmosphere = Instance.new("Atmosphere")
+	atmosphere.Density = 0.28
+	atmosphere.Offset = 0.25
+	atmosphere.Color = Color3.fromRGB(205, 190, 255)
+	atmosphere.Decay = Color3.fromRGB(110, 115, 135)
+	atmosphere.Glare = 0.2
+	atmosphere.Haze = 1.2
+	atmosphere.Parent = Lighting
+
+	local bloom = Instance.new("BloomEffect")
+	bloom.Intensity = 0.5
+	bloom.Size = 24
+	bloom.Threshold = 1.6
+	bloom.Parent = Lighting
+
+	local color = Instance.new("ColorCorrectionEffect")
+	color.Saturation = 0.15
+	color.Contrast = 0.05
+	color.Parent = Lighting
+
+	local sunRays = Instance.new("SunRaysEffect")
+	sunRays.Intensity = 0.06
+	sunRays.Parent = Lighting
+end
+
+local function buildGround(map: Folder)
+	local sizeZ = GROUND_MAX_Z - GROUND_MIN_Z
+	Part({
+		Name = "Ground",
+		Size = Vector3.new(GROUND_HALF_X * 2, 4, sizeZ),
+		CFrame = CFrame.new(0, -2, (GROUND_MIN_Z + GROUND_MAX_Z) / 2),
+		Material = Enum.Material.Grass,
+		Color = COLORS.Grass,
+		Parent = map,
+	})
+
+	-- Trottoirs entre la route et les bases : guident le joueur vers les entrées.
+	local sidewalkWidth = GameConfig.ROAD_TO_BASE_GAP
+	for _, side in { -1, 1 } do
+		Part({
+			Name = "Sidewalk",
+			Size = Vector3.new(sidewalkWidth, 0.3, ROAD_VISUAL_LENGTH),
+			CFrame = CFrame.new(side * (HALF_ROAD + sidewalkWidth / 2), 0.15, 0),
+			Material = Enum.Material.Pavement,
+			Color = COLORS.Sidewalk,
+			Parent = map,
+		})
+	end
+end
+
+local function buildRoad(area: Folder)
+	Part({
+		Name = "MonsterRoad",
+		Size = Vector3.new(GameConfig.ROAD_WIDTH, 0.5, ROAD_VISUAL_LENGTH),
+		CFrame = CFrame.new(0, 0.25, 0),
+		Color = COLORS.Road,
+		Parent = area,
+	})
+
+	for _, side in { -1, 1 } do
+		Part({
+			Name = "RoadEdge",
+			Size = Vector3.new(1, 0.6, ROAD_VISUAL_LENGTH),
+			CFrame = CFrame.new(side * (HALF_ROAD - 0.5), 0.3, 0),
+			Material = Enum.Material.Neon,
+			Color = COLORS.RoadGlow,
+			Parent = area,
+		})
+	end
+
+	-- Chevrons lumineux : montrent le sens de marche des monstres (portail -> arène).
+	local arrows = Instance.new("Folder")
+	arrows.Name = "Arrows"
+	arrows.Parent = area
+	local count = 10
+	local step = (GameConfig.ROAD_LENGTH - 50) / (count - 1)
+	for i = 0, count - 1 do
+		local z = -HALF_LENGTH + 25 + i * step
+		for _, side in { -1, 1 } do
+			Part({
+				Name = "Chevron",
+				Size = Vector3.new(0.8, 0.1, 8.5),
+				CFrame = CFrame.new(side * 3, 0.55, z - 3) * CFrame.Angles(0, math.rad(-45 * side), 0),
+				Material = Enum.Material.Neon,
+				Color = COLORS.RoadGlow,
+				Transparency = 0.35,
+				CanCollide = false,
+				Parent = arrows,
+			})
+		end
+	end
+end
+
+-- Arche générique (portail d'entrée / sortie).
+local function buildArch(
+	parent: Folder,
+	name: string,
+	z: number,
+	signText: string,
+	signFace: Enum.NormalId,
+	glowColor: Color3
+): Model
+	local arch = Instance.new("Model")
+	arch.Name = name
+
+	for _, side in { -1, 1 } do
+		Part({
+			Name = "Pillar",
+			Size = Vector3.new(5, 32, 5),
+			CFrame = CFrame.new(side * (HALF_ROAD + 3), 16, z),
+			Material = Enum.Material.Slate,
+			Color = COLORS.PortalStone,
+			Parent = arch,
+		})
+		local cap = Part({
+			Name = "PillarGem",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(4, 4, 4),
+			CFrame = CFrame.new(side * (HALF_ROAD + 3), 39.5, z),
+			Material = Enum.Material.Neon,
+			Color = glowColor,
+			CanCollide = false,
+			Parent = arch,
+		})
+		PartFactory.Light(cap, glowColor, 20, 1.5)
+	end
+
+	local beam = Part({
+		Name = "Sign",
+		Size = Vector3.new(GameConfig.ROAD_WIDTH + 14, 6, 3),
+		CFrame = CFrame.new(0, 34, z),
+		Material = Enum.Material.Slate,
+		Color = COLORS.PortalStone,
+		Parent = arch,
+	})
+	PartFactory.SurfaceText(beam, signFace, signText, COLORS.Gold, Color3.fromRGB(40, 20, 60))
+
+	arch.PrimaryPart = beam
+	arch.Parent = parent
+	return arch
+end
+
+local function buildPortal(area: Folder)
+	-- Le portail fait face à la route (+Z) : le texte est donc sur la face "Back" (+Z).
+	local portal = buildArch(area, "MonsterPortal", PORTAL_Z, "👾 MONSTER PORTAL", Enum.NormalId.Back, COLORS.PortalGlow)
+
+	local swirl = Part({
+		Name = "PortalSwirl",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(1, 28, 28),
+		CFrame = CFrame.new(0, 16, PORTAL_Z) * CFrame.Angles(0, math.rad(90), 0),
+		Material = Enum.Material.Neon,
+		Color = COLORS.PortalGlow,
+		Transparency = 0.25,
+		CanCollide = false,
+		CastShadow = false,
+		Parent = portal,
+	})
+	PartFactory.Sparkles(swirl, Color3.fromRGB(220, 170, 255), 14)
+	PartFactory.Light(swirl, COLORS.PortalGlow, 30, 2)
+
+	-- Mur derrière le portail : le joueur ne peut pas passer "dans" le portail.
+	Part({
+		Name = "PortalBack",
+		Size = Vector3.new(GameConfig.ROAD_WIDTH + 10, 32, 2),
+		CFrame = CFrame.new(0, 16, PORTAL_Z - 2.5),
+		Material = Enum.Material.Slate,
+		Color = COLORS.PortalStone,
+		Parent = portal,
+	})
+end
+
+local function buildExitAndArena(monsterArea: Folder, eventArea: Folder)
+	-- Arche de sortie : texte côté route (-Z = face "Front").
+	buildArch(monsterArea, "MonsterExit", EXIT_Z, "⚡ EVENT ZONE ⚡", Enum.NormalId.Front, COLORS.Gold)
+
+	-- Chemin vers l'arène
+	Part({
+		Name = "ArenaPath",
+		Size = Vector3.new(GameConfig.ROAD_WIDTH, 0.4, ARENA_Z - EXIT_Z - ARENA_RADIUS + 4),
+		CFrame = CFrame.new(0, 0.2, (EXIT_Z + ARENA_Z - ARENA_RADIUS) / 2),
+		Material = Enum.Material.Pavement,
+		Color = COLORS.Sidewalk,
+		Parent = eventArea,
+	})
+
+	local vertical = CFrame.Angles(0, 0, math.rad(90)) -- l'axe d'un cylindre Roblox est X : on le met debout
+	Part({
+		Name = "ArenaRing",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.8, ARENA_RADIUS * 2 + 4, ARENA_RADIUS * 2 + 4),
+		CFrame = CFrame.new(0, 0.4, ARENA_Z) * vertical,
+		Material = Enum.Material.Neon,
+		Color = COLORS.Gold,
+		Parent = eventArea,
+	})
+	Part({
+		Name = "ArenaFloor",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(1, ARENA_RADIUS * 2, ARENA_RADIUS * 2),
+		CFrame = CFrame.new(0, 0.5, ARENA_Z) * vertical,
+		Material = Enum.Material.Slate,
+		Color = COLORS.ArenaFloor,
+		Parent = eventArea,
+	})
+	local pedestal = Part({
+		Name = "BossPedestal",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(3, 18, 18),
+		CFrame = CFrame.new(0, 2.5, ARENA_Z) * vertical,
+		Material = Enum.Material.Marble,
+		Color = COLORS.White,
+		Parent = eventArea,
+	})
+	Part({
+		Name = "BossPedestalGlow",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.2, 19, 19),
+		CFrame = CFrame.new(0, 3.95, ARENA_Z) * vertical,
+		Material = Enum.Material.Neon,
+		Color = COLORS.Gold,
+		CanCollide = false,
+		Parent = eventArea,
+	})
+	PartFactory.Light(pedestal, COLORS.Gold, 24, 1.2)
+
+	return marker("ArenaCenter", Vector3.new(0, 4, ARENA_Z), eventArea)
+end
+
+local function buildLamps(map: Folder)
+	local lamps = Instance.new("Folder")
+	lamps.Name = "Lamps"
+	lamps.Parent = map
+	local count = 10
+	local step = (GameConfig.ROAD_LENGTH - 40) / (count - 1)
+	for i = 0, count - 1 do
+		local z = -HALF_LENGTH + 20 + i * step
+		for _, side in { -1, 1 } do
+			local x = side * (HALF_ROAD + 2)
+			Part({
+				Name = "LampPole",
+				Size = Vector3.new(0.8, 12, 0.8),
+				CFrame = CFrame.new(x, 6, z),
+				Material = Enum.Material.Metal,
+				Color = COLORS.LampMetal,
+				Parent = lamps,
+			})
+			local head = Part({
+				Name = "LampHead",
+				Size = Vector3.new(2.4, 1.4, 2.4),
+				CFrame = CFrame.new(x, 12.6, z),
+				Material = Enum.Material.Neon,
+				Color = COLORS.LampLight,
+				CanCollide = false,
+				Parent = lamps,
+			})
+			PartFactory.Light(head, COLORS.LampLight, 18, 1.2)
+		end
+	end
+end
+
+local function buildTrees(map: Folder)
+	local trees = Instance.new("Folder")
+	trees.Name = "Trees"
+	trees.Parent = map
+
+	local rng = Random.new(7) -- graine fixe : la map est identique sur tous les serveurs
+	local greens = {
+		Color3.fromRGB(70, 170, 70),
+		Color3.fromRGB(95, 190, 80),
+		Color3.fromRGB(60, 150, 90),
+		Color3.fromRGB(130, 200, 90),
+	}
+	local innerX = GameConfig.ROAD_WIDTH / 2 + GameConfig.ROAD_TO_BASE_GAP + GameConfig.BASE_DEPTH + 26
+
+	local function tree(position: Vector3)
+		local height = rng:NextNumber(8, 14)
+		local crown = rng:NextNumber(11, 18)
+		Part({
+			Name = "Trunk",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(height, 2.4, 2.4),
+			CFrame = CFrame.new(position + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+			Material = Enum.Material.Wood,
+			Color = Color3.fromRGB(120, 82, 50),
+			Parent = trees,
+		})
+		Part({
+			Name = "Crown",
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(crown, crown, crown),
+			CFrame = CFrame.new(position + Vector3.new(0, height + crown * 0.3, 0)),
+			Material = Enum.Material.Grass,
+			Color = greens[rng:NextInteger(1, #greens)],
+			Parent = trees,
+		})
+	end
+
+	for _, side in { -1, 1 } do
+		for _ = 1, 16 do
+			local x = side * rng:NextNumber(innerX, GROUND_HALF_X - 12)
+			local z = rng:NextNumber(GROUND_MIN_Z + 20, EXIT_Z)
+			tree(Vector3.new(x, 0, z))
+		end
+	end
+	-- Quelques arbres autour de l'arène
+	for i = 1, 8 do
+		local angle = (i / 8) * math.pi * 2 + rng:NextNumber(-0.2, 0.2)
+		local radius = ARENA_RADIUS + rng:NextNumber(14, 26)
+		local position = Vector3.new(math.cos(angle) * radius, 0, ARENA_Z + math.sin(angle) * radius)
+		-- On évite le chemin d'accès à l'arène
+		if math.abs(position.X) > GameConfig.ROAD_WIDTH then
+			tree(position)
+		end
+	end
+end
+
+local function buildBoundaries(map: Folder)
+	local folder = Instance.new("Folder")
+	folder.Name = "Boundaries"
+	folder.Parent = map
+	local height = 120
+	local sizeZ = GROUND_MAX_Z - GROUND_MIN_Z
+	local centerZ = (GROUND_MIN_Z + GROUND_MAX_Z) / 2
+	local walls = {
+		{ Vector3.new(4, height, sizeZ), Vector3.new(GROUND_HALF_X + 2, height / 2, centerZ) },
+		{ Vector3.new(4, height, sizeZ), Vector3.new(-GROUND_HALF_X - 2, height / 2, centerZ) },
+		{ Vector3.new(GROUND_HALF_X * 2, height, 4), Vector3.new(0, height / 2, GROUND_MIN_Z - 2) },
+		{ Vector3.new(GROUND_HALF_X * 2, height, 4), Vector3.new(0, height / 2, GROUND_MAX_Z + 2) },
+	}
+	for _, wall in walls do
+		Part({
+			Name = "InvisibleWall",
+			Size = wall[1],
+			CFrame = CFrame.new(wall[2]),
+			Transparency = 1,
+			CanQuery = false,
+			Parent = folder,
+		})
+	end
+end
+
+local function buildFallbackSpawn(map: Folder): SpawnLocation
+	-- Utilisé seulement une fraction de seconde : BaseService téléporte ensuite le joueur dans sa base.
+	local spawn = Instance.new("SpawnLocation")
+	spawn.Name = "FallbackSpawn"
+	spawn.Anchored = true
+	spawn.Size = Vector3.new(12, 1, 12)
+	spawn.CFrame = CFrame.new(0, 0.5, PORTAL_Z + 25)
+	spawn.Transparency = 1
+	spawn.CanCollide = false
+	spawn.CanQuery = false
+	spawn.Neutral = true
+	spawn.Duration = 0 -- pas de ForceField
+	spawn.Parent = map
+	local decal = spawn:FindFirstChildOfClass("Decal")
+	if decal then
+		decal:Destroy()
+	end
+	return spawn
+end
+
+function MapService:Init()
+	cleanupTemplate()
+	setupLighting()
+
+	local map = Instance.new("Folder")
+	map.Name = "Map"
+	local monsterArea = Instance.new("Folder")
+	monsterArea.Name = "MonsterArea"
+	local eventArea = Instance.new("Folder")
+	eventArea.Name = "EventArea"
+
+	buildGround(map)
+	buildRoad(monsterArea)
+	buildPortal(monsterArea)
+	local arenaCenter = buildExitAndArena(monsterArea, eventArea)
+	buildLamps(map)
+	buildTrees(map)
+	buildBoundaries(map)
+	local fallbackSpawn = buildFallbackSpawn(map)
+
+	-- Marqueurs utilisés par les phases suivantes (marche des monstres, événements)
+	-- Les monstres sortiront du portail (RoadStart) et disparaîtront sous l'arche de sortie (RoadEnd).
+	local roadStart = marker("RoadStart", Vector3.new(0, 1, PORTAL_Z + 3), monsterArea)
+	local roadEnd = marker("RoadEnd", Vector3.new(0, 1, EXIT_Z), monsterArea)
+
+	map.Parent = workspace
+	monsterArea.Parent = workspace
+	eventArea.Parent = workspace
+
+	MapService.Anchors = {
+		RoadStart = roadStart,
+		RoadEnd = roadEnd,
+		ArenaCenter = arenaCenter,
+		FallbackSpawn = fallbackSpawn,
+	}
+end
+
+return MapService
+]]></string>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Folder" referent="14">
+        <Properties>
+          <string name="Name">Util</string>
+        </Properties>
+        <Item class="ModuleScript" referent="15">
+          <Properties>
+            <string name="Name">PartFactory</string>
+            <string name="Source"><![CDATA[--!strict
+-- PartFactory : helpers pour générer la map par script (moins de construction manuelle).
+-- Toutes les pièces sont ancrées, lisses, et CanTouch = false par défaut (moins de calculs
+-- de collisions "Touched" = meilleures perfs mobile).
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local GameConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("GameConfig"))
+
+local PartFactory = {}
+
+export type Props = { [string]: any }
+
+-- Crée une Part. `props` accepte n'importe quelle propriété de Part (+ Parent).
+function PartFactory.Part(props: Props): Part
+	local part = Instance.new("Part")
+	part.Anchored = true
+	part.TopSurface = Enum.SurfaceType.Smooth
+	part.BottomSurface = Enum.SurfaceType.Smooth
+	part.CanTouch = false
+	part.Material = Enum.Material.SmoothPlastic
+	for key, value in props do
+		if key ~= "Parent" then
+			(part :: any)[key] = value
+		end
+	end
+	part.Parent = props.Parent
+	return part
+end
+
+-- Crée une WedgePart (toits, cristaux).
+function PartFactory.Wedge(props: Props): WedgePart
+	local part = Instance.new("WedgePart")
+	part.Anchored = true
+	part.TopSurface = Enum.SurfaceType.Smooth
+	part.BottomSurface = Enum.SurfaceType.Smooth
+	part.CanTouch = false
+	for key, value in props do
+		if key ~= "Parent" then
+			(part :: any)[key] = value
+		end
+	end
+	part.Parent = props.Parent
+	return part
+end
+
+-- Ajoute un texte cartoon sur une face d'une Part (panneaux, enseignes).
+function PartFactory.SurfaceText(
+	part: BasePart,
+	face: Enum.NormalId,
+	text: string,
+	textColor: Color3,
+	strokeColor: Color3?
+): TextLabel
+	local gui = Instance.new("SurfaceGui")
+	gui.Name = "Text_" .. face.Name
+	gui.Face = face
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	gui.PixelsPerStud = 40
+	gui.LightInfluence = 0
+	gui.MaxDistance = 400
+
+	local label = Instance.new("TextLabel")
+	label.Name = "Label"
+	label.BackgroundTransparency = 1
+	label.Size = UDim2.fromScale(1, 1)
+	label.Font = GameConfig.FONT
+	label.TextScaled = true
+	label.Text = text
+	label.TextColor3 = textColor
+	label.Parent = gui
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = strokeColor or Color3.new(0, 0, 0)
+	stroke.Thickness = 4
+	stroke.Parent = label
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0.04, 0)
+	padding.PaddingRight = UDim.new(0.04, 0)
+	padding.PaddingTop = UDim.new(0.08, 0)
+	padding.PaddingBottom = UDim.new(0.08, 0)
+	padding.Parent = label
+
+	gui.Parent = part
+	return label
+end
+
+-- Lumière ponctuelle légère (sans ombres = beaucoup plus rapide sur mobile).
+function PartFactory.Light(parent: BasePart, color: Color3, range: number, brightness: number): PointLight
+	local light = Instance.new("PointLight")
+	light.Color = color
+	light.Range = range
+	light.Brightness = brightness
+	light.Shadows = false
+	light.Parent = parent
+	return light
+end
+
+-- Petites particules scintillantes, faible débit (optimisé).
+function PartFactory.Sparkles(parent: BasePart, color: Color3, rate: number): ParticleEmitter
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	emitter.Color = ColorSequence.new(color)
+	emitter.LightEmission = 1
+	emitter.Rate = rate
+	emitter.Lifetime = NumberRange.new(1.2, 2)
+	emitter.Speed = NumberRange.new(1, 3)
+	emitter.SpreadAngle = Vector2.new(180, 180)
+	emitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.6),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	emitter.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.1),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	emitter.Parent = parent
+	return emitter
+end
+
+return PartFactory
+]]></string>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="StarterPlayer" referent="16">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+    </Properties>
+    <Item class="StarterPlayerScripts" referent="17">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+      </Properties>
+      <Item class="Folder" referent="18">
+        <Properties>
+          <string name="Name">Client</string>
+        </Properties>
+        <Item class="Folder" referent="19">
+          <Properties>
+            <string name="Name">Controllers</string>
+          </Properties>
+          <Item class="ModuleScript" referent="20">
+            <Properties>
+              <string name="Name">BaseMarkerController</string>
+              <string name="Source"><![CDATA[--!strict
+-- BaseMarkerController : tout ce qui aide le joueur à se repérer par rapport à SA base.
+--   * Marqueur "🏠 YOUR BASE ▼" au-dessus de ta base, visible à travers les murs
+--     (essentiel quand on revient d'un vol !). Caché quand tu es déjà chez toi.
+--   * Caméra : après chaque apparition, elle est recalée pour regarder tes monstres.
+-- Purement visuel et local : le serveur reste seul maître de l'attribution des bases.
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local GameConfig = require(Shared:WaitForChild("Config"):WaitForChild("GameConfig"))
+
+local HOME_MARGIN = 2 -- studs autour du sol de la base qui comptent encore comme "chez soi"
+local CHECK_INTERVAL = 0.5 -- pas besoin de vérifier à chaque frame
+local CAMERA_SNAP_TIMEOUT = 5
+
+local player = Players.LocalPlayer
+
+local BaseMarkerController = {}
+
+local marker: BillboardGui? = nil
+local homeFloor: BasePart? = nil
+
+local function buildMarker(adornee: BasePart, accent: Color3): BillboardGui
+	local gui = Instance.new("BillboardGui")
+	gui.Name = "YourBaseMarker"
+	gui.Adornee = adornee
+	gui.AlwaysOnTop = true
+	gui.Size = UDim2.fromOffset(190, 64)
+	-- Même point d'ancrage que le haut de la carte du propriétaire (OwnerBillboard : 7 + 4/2 studs),
+	-- puis décalé de sa propre hauteur vers le haut : jamais de chevauchement, à toute distance.
+	gui.StudsOffsetWorldSpace = Vector3.new(0, 9, 0)
+	gui.SizeOffset = Vector2.new(0, 0.6)
+	gui.LightInfluence = 0
+	gui.ResetOnSpawn = false
+
+	local text = Instance.new("TextLabel")
+	text.Name = "Label"
+	text.BackgroundTransparency = 1
+	text.Size = UDim2.new(1, 0, 0.62, 0)
+	text.Font = GameConfig.FONT
+	text.TextScaled = true
+	text.Text = "🏠 YOUR BASE"
+	text.TextColor3 = Color3.new(1, 1, 1)
+	text.Parent = gui
+	local textStroke = Instance.new("UIStroke")
+	textStroke.Color = accent
+	textStroke.Thickness = 3
+	textStroke.Parent = text
+
+	local arrow = Instance.new("TextLabel")
+	arrow.Name = "Arrow"
+	arrow.BackgroundTransparency = 1
+	arrow.Position = UDim2.fromScale(0, 0.58)
+	arrow.Size = UDim2.new(1, 0, 0.42, 0)
+	arrow.Font = GameConfig.FONT
+	arrow.TextScaled = true
+	arrow.Text = "▼"
+	arrow.TextColor3 = accent
+	arrow.Parent = gui
+
+	gui.Parent = player:WaitForChild("PlayerGui")
+	return gui
+end
+
+local function setupForBase(baseIndex: number)
+	if marker then
+		marker:Destroy()
+		marker = nil
+	end
+	homeFloor = nil
+
+	local bases = workspace:WaitForChild("Bases", 15)
+	local model = bases and bases:WaitForChild("Base_" .. baseIndex, 15)
+	local arch = model and model:WaitForChild("Arch", 15)
+	local sign = arch and arch:WaitForChild("Sign", 15)
+	local floor = model and model:WaitForChild("Floor", 15)
+	if not (model and sign and sign:IsA("BasePart") and floor and floor:IsA("BasePart")) then
+		warn("[BaseMarker] Base introuvable côté client (Workspace.StreamingEnabled doit être désactivé)")
+		return
+	end
+
+	local accentValue = model:GetAttribute("AccentColor")
+	local accent = if typeof(accentValue) == "Color3" then accentValue else Color3.new(1, 1, 1)
+	marker = buildMarker(sign, accent)
+	homeFloor = floor
+end
+
+-- Vrai si la position est au-dessus du sol de notre base (+ petite marge).
+local function isAtHome(position: Vector3): boolean
+	local floor = homeFloor
+	if not floor then
+		return false
+	end
+	local relative = floor.CFrame:PointToObjectSpace(position)
+	return math.abs(relative.X) <= floor.Size.X / 2 + HOME_MARGIN
+		and math.abs(relative.Z) <= floor.Size.Z / 2 + HOME_MARGIN
+end
+
+local function refreshVisibility()
+	local currentMarker = marker
+	if not currentMarker then
+		return
+	end
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	currentMarker.Enabled = not (root and isAtHome(root.Position))
+end
+
+-- Le personnage apparaît d'abord au spawn de secours, et la caméra Roblox se cale sur cette
+-- direction-là. On attend que la téléportation serveur soit arrivée (root dans notre base),
+-- puis on oriente la caméra dans le dos du joueur, vers ses monstres.
+local function snapCameraWhenHome(character: Model)
+	local root = character:WaitForChild("HumanoidRootPart", 10)
+	if not (root and root:IsA("BasePart")) then
+		return
+	end
+	local deadline = os.clock() + CAMERA_SNAP_TIMEOUT
+	while os.clock() < deadline and character.Parent and player.Character == character do
+		if isAtHome(root.Position) then
+			RunService.RenderStepped:Wait()
+			local camera = workspace.CurrentCamera
+			local look = root.CFrame.LookVector
+			camera.CFrame = CFrame.lookAt(root.Position - look * 12 + Vector3.new(0, 5, 0), root.Position + look * 6)
+			return
+		end
+		RunService.Heartbeat:Wait()
+	end
+end
+
+function BaseMarkerController.Start()
+	local function onBaseIndexChanged()
+		local index = player:GetAttribute("BaseIndex")
+		if typeof(index) == "number" then
+			task.spawn(setupForBase, index)
+		end
+	end
+	player:GetAttributeChangedSignal("BaseIndex"):Connect(onBaseIndexChanged)
+	onBaseIndexChanged()
+
+	player.CharacterAdded:Connect(function(character)
+		task.spawn(snapCameraWhenHome, character)
+	end)
+	if player.Character then
+		task.spawn(snapCameraWhenHome, player.Character)
+	end
+
+	task.spawn(function()
+		while true do
+			refreshVisibility()
+			task.wait(CHECK_INTERVAL)
+		end
+	end)
+end
+
+return BaseMarkerController
+]]></string>
+            </Properties>
+          </Item>
+          <Item class="ModuleScript" referent="21">
+            <Properties>
+              <string name="Name">NotificationController</string>
+              <string name="Source"><![CDATA[--!strict
+-- NotificationController : notifications animées (mobile-first).
+--   Toast  : petit message empilé en haut de l'écran ("+1 MONSTER", "BASE LEVEL 3"...)
+--   Banner : grand titre centré, un seul à la fois, file d'attente ("YOUR FIRST MONSTER!")
+-- Le serveur les déclenche via le RemoteEvent "Notify" ; le client peut aussi les appeler.
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local GameConfig = require(Shared:WaitForChild("Config"):WaitForChild("GameConfig"))
+local Net = require(Shared:WaitForChild("Net"))
+
+export type Payload = {
+	Kind: string, -- "Toast" | "Banner"
+	Title: string,
+	Subtitle: string?,
+	Color: Color3?,
+	Duration: number?,
+}
+
+local MAX_TOASTS = 4
+local DEFAULT_COLOR = Color3.fromRGB(255, 205, 70)
+local DARK = Color3.fromRGB(24, 20, 40)
+
+local NotificationController = {}
+
+local screenGui: ScreenGui
+local toastContainer: Frame
+local bannerQueue: { Payload } = {}
+local bannerRunning = false
+
+local function corner(parent: Instance, radius: number)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, radius)
+	c.Parent = parent
+end
+
+local function stroke(parent: Instance, color: Color3, thickness: number)
+	local s = Instance.new("UIStroke")
+	s.Color = color
+	s.Thickness = thickness
+	s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	s.Parent = parent
+end
+
+-- Un CanvasGroup coupe tout ce qui dépasse de ses bords (dont le contour UIStroke).
+-- On place donc la "carte" visible à l'intérieur avec une petite marge.
+local function card(group: CanvasGroup, accent: Color3, radius: number, thickness: number): Frame
+	local margin = thickness + 1
+	local frame = Instance.new("Frame")
+	frame.Name = "Card"
+	frame.AnchorPoint = Vector2.new(0.5, 0.5)
+	frame.Position = UDim2.fromScale(0.5, 0.5)
+	frame.Size = UDim2.new(1, -margin * 2, 1, -margin * 2)
+	frame.BackgroundColor3 = DARK
+	frame.BackgroundTransparency = 0.1
+	frame.ClipsDescendants = false
+	frame.Parent = group
+	corner(frame, radius)
+	stroke(frame, accent, thickness)
+	return frame
+end
+
+local function label(parent: Instance, text: string, maxTextSize: number): TextLabel
+	local l = Instance.new("TextLabel")
+	l.BackgroundTransparency = 1
+	l.Font = GameConfig.FONT
+	l.Text = text
+	l.TextColor3 = Color3.new(1, 1, 1)
+	l.TextScaled = true
+	l.Parent = parent
+	local constraint = Instance.new("UITextSizeConstraint")
+	constraint.MaxTextSize = maxTextSize
+	constraint.Parent = l
+	local textStroke = Instance.new("UIStroke")
+	textStroke.Color = Color3.new(0, 0, 0)
+	textStroke.Thickness = 2
+	textStroke.Parent = l
+	return l
+end
+
+local function buildGui()
+	local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+	screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "NotificationsUI"
+	screenGui.ResetOnSpawn = false
+	screenGui.IgnoreGuiInset = true
+	screenGui.DisplayOrder = 50
+	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+	toastContainer = Instance.new("Frame")
+	toastContainer.Name = "Toasts"
+	toastContainer.AnchorPoint = Vector2.new(0.5, 0)
+	toastContainer.Position = UDim2.new(0.5, 0, 0, 64) -- sous la barre Roblox
+	toastContainer.Size = UDim2.new(0.92, 0, 0.5, 0)
+	toastContainer.BackgroundTransparency = 1
+	toastContainer.Parent = screenGui
+
+	local sizeConstraint = Instance.new("UISizeConstraint")
+	sizeConstraint.MaxSize = Vector2.new(440, math.huge)
+	sizeConstraint.Parent = toastContainer
+
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Vertical
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 8)
+	layout.Parent = toastContainer
+
+	screenGui.Parent = playerGui
+end
+
+local toastCounter = 0
+
+function NotificationController.Toast(title: string, color: Color3?, duration: number?)
+	local accent = color or DEFAULT_COLOR
+
+	-- Limite le nombre de toasts visibles : on retire les plus anciens.
+	local existing = {}
+	for _, child in toastContainer:GetChildren() do
+		if child:IsA("CanvasGroup") then
+			table.insert(existing, child)
+		end
+	end
+	table.sort(existing, function(a, b)
+		return a.LayoutOrder < b.LayoutOrder
+	end)
+	for i = 1, #existing - MAX_TOASTS + 1 do
+		existing[i]:Destroy()
+	end
+
+	toastCounter += 1
+	local toast = Instance.new("CanvasGroup")
+	toast.Name = "Toast"
+	toast.LayoutOrder = toastCounter
+	toast.Size = UDim2.new(1, 0, 0, 54)
+	toast.BackgroundTransparency = 1
+	toast.GroupTransparency = 1
+	local body = card(toast, accent, 14, 3)
+
+	local text = label(body, title, 26)
+	text.Position = UDim2.new(0, 16, 0, 6)
+	text.Size = UDim2.new(1, -28, 1, -12)
+
+	local scale = Instance.new("UIScale")
+	scale.Scale = 0.7
+	scale.Parent = toast
+
+	toast.Parent = toastContainer
+
+	TweenService:Create(scale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+	TweenService:Create(toast, TweenInfo.new(0.2), { GroupTransparency = 0 }):Play()
+
+	task.delay(duration or 2.5, function()
+		if not toast.Parent then
+			return
+		end
+		local fade = TweenService:Create(toast, TweenInfo.new(0.3), { GroupTransparency = 1 })
+		fade:Play()
+		fade.Completed:Wait()
+		toast:Destroy()
+	end)
+end
+
+local function playBanner(payload: Payload)
+	local accent = payload.Color or DEFAULT_COLOR
+
+	local banner = Instance.new("CanvasGroup")
+	banner.Name = "Banner"
+	banner.AnchorPoint = Vector2.new(0.5, 0.5)
+	banner.Position = UDim2.fromScale(0.5, 0.3)
+	banner.Size = UDim2.new(0.9, 0, 0, 124)
+	banner.BackgroundTransparency = 1
+	banner.GroupTransparency = 1
+	local body = card(banner, accent, 22, 4)
+
+	local sizeConstraint = Instance.new("UISizeConstraint")
+	sizeConstraint.MaxSize = Vector2.new(640, 124)
+	sizeConstraint.Parent = banner
+
+	local title = label(body, payload.Title, 54)
+	title.Position = UDim2.new(0, 16, 0, 8)
+	title.Size = UDim2.new(1, -32, if payload.Subtitle then 0.6 else 1, if payload.Subtitle then -8 else -16)
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new(Color3.new(1, 1, 1), accent)
+	gradient.Rotation = 90
+	gradient.Parent = title
+
+	if payload.Subtitle then
+		local subtitle = label(body, payload.Subtitle, 24)
+		subtitle.Position = UDim2.new(0, 16, 0.6, 0)
+		subtitle.Size = UDim2.new(1, -32, 0.4, -10)
+		subtitle.TextColor3 = Color3.fromRGB(225, 225, 240)
+	end
+
+	local scale = Instance.new("UIScale")
+	scale.Scale = 0.4
+	scale.Parent = banner
+
+	banner.Parent = screenGui
+
+	TweenService:Create(scale, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+	TweenService:Create(banner, TweenInfo.new(0.25), { GroupTransparency = 0 }):Play()
+
+	task.wait(payload.Duration or 3)
+
+	local out = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	TweenService:Create(banner, out, { GroupTransparency = 1, Position = UDim2.fromScale(0.5, 0.24) }):Play()
+	local shrink = TweenService:Create(scale, out, { Scale = 0.85 })
+	shrink:Play()
+	shrink.Completed:Wait()
+	banner:Destroy()
+end
+
+function NotificationController.Banner(payload: Payload)
+	table.insert(bannerQueue, payload)
+	if bannerRunning then
+		return
+	end
+	bannerRunning = true
+	task.spawn(function()
+		while #bannerQueue > 0 do
+			local nextPayload = table.remove(bannerQueue, 1) :: Payload
+			playBanner(nextPayload)
+		end
+		bannerRunning = false
+	end)
+end
+
+-- Le serveur est la seule source de ces messages, mais on valide quand même le format
+-- (un module client ne doit jamais planter sur une donnée inattendue).
+local function onNotify(raw: any)
+	if typeof(raw) ~= "table" or typeof(raw.Title) ~= "string" then
+		return
+	end
+	local payload: Payload = {
+		Kind = if raw.Kind == "Banner" then "Banner" else "Toast",
+		Title = raw.Title,
+		Subtitle = if typeof(raw.Subtitle) == "string" then raw.Subtitle else nil,
+		Color = if typeof(raw.Color) == "Color3" then raw.Color else nil,
+		Duration = if typeof(raw.Duration) == "number" then math.clamp(raw.Duration, 0.5, 10) else nil,
+	}
+	if payload.Kind == "Banner" then
+		NotificationController.Banner(payload)
+	else
+		NotificationController.Toast(payload.Title, payload.Color, payload.Duration)
+	end
+end
+
+function NotificationController.Start()
+	buildGui()
+	Net.Event("Notify").OnClientEvent:Connect(onNotify)
+end
+
+return NotificationController
+]]></string>
+            </Properties>
+          </Item>
+        </Item>
+        <Item class="LocalScript" referent="22">
+          <Properties>
+            <string name="Name">Main</string>
+            <string name="Source"><![CDATA[--!strict
+-- Main (client) : point d'entrée unique côté joueur.
+-- Démarre les contrôleurs dans l'ordre. Les phases suivantes ajouteront les leurs ici.
+
+local Controllers = script.Parent:WaitForChild("Controllers")
+
+local NotificationController = require(Controllers:WaitForChild("NotificationController"))
+local BaseMarkerController = require(Controllers:WaitForChild("BaseMarkerController"))
+
+NotificationController.Start()
+BaseMarkerController.Start()
+]]></string>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="Workspace" referent="23">
+    <Properties>
+      <string name="Name">Workspace</string>
+      <bool name="NeedsPivotMigration">false</bool>
+      <bool name="StreamingEnabled">false</bool>
+    </Properties>
+  </Item>
+</roblox>

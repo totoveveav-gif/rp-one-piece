@@ -34,6 +34,7 @@ Le reste du dépôt (`blender/`, map GMod…) n'a rien à voir avec ce jeu.
 1. Télécharge **`StealAMonster.rbxlx`** (dans ce dossier) sur ton PC.
    Sur GitHub : clique sur le fichier → bouton **Download raw file** (icône ⬇️).
 2. Double-clique dessus : il s'ouvre dans **Roblox Studio** avec tous les scripts déjà rangés.
+   *(En mode édition la place paraît vide, c'est normal : la map est construite par script quand tu cliques sur ▶ Play.)*
 3. **File → Publish to Roblox** (crée ton jeu sur ton compte).
 4. Fais la configuration ci-dessous (⚙️), puis clique sur **▶ Play**.
 
@@ -67,6 +68,7 @@ Ouvre chaque script et colle le contenu du fichier correspondant.
 
 ⚠️ Les noms doivent être **exactement** identiques (majuscules comprises).
 Inutile de supprimer le Baseplate : le script le retire tout seul au lancement.
+Quand tout est collé : **File → Publish to Roblox** (nécessaire pour régler Max Players).
 
 ### Méthode 3 — Rojo (pour plus tard, quand tu seras à l'aise)
 
@@ -81,7 +83,7 @@ rojo build default.project.json -o StealAMonster.rbxlx   # régénère le fichie
 
 | Où | Réglage | Valeur | Pourquoi |
 |---|---|---|---|
-| Home → **Game Settings** → Places → (ta place) → Max Players | Max Players | **8** | 1 joueur = 1 base, il y a 8 bases |
+| Home → **Game Settings** → Places → (ta place) → Max Players *(seulement après **File → Publish to Roblox** ; inutile pour tester dans Studio)* | Max Players | **8** | 1 joueur = 1 base, il y a 8 bases |
 | Explorer → **Workspace** → Properties | `StreamingEnabled` | **décoché** (false) | Petite map : tout le monde voit toutes les bases en permanence (déjà fait dans le `.rbxlx`) |
 
 Rien d'autre : la map, l'éclairage, les bases et les remotes sont **générés par script**.
@@ -92,7 +94,7 @@ Rien d'autre : la map, l'éclairage, les bases et les remotes sont **générés 
 
 1. Clique sur **▶ Play**. Dans la fenêtre **Output** (View → Output) tu dois voir :
    `[Steal a Monster] Serveur prêt ✅` — et **aucune ligne rouge**.
-2. **Secondes 0-5** : tu apparais **directement dans ta base**, face à tes emplacements de monstres.
+2. **Secondes 0-5** : tu apparais **directement dans ta base**, la caméra tournée vers tes emplacements de monstres.
 3. Une grande bannière animée s'affiche : **🏠 THIS IS YOUR BASE!**
 4. Au-dessus de l'entrée : ton **nom**, ton **avatar** et `LVL 1 • STARTER CAMP`.
 5. Sors de ta base : un marqueur **🏠 YOUR BASE ▼** apparaît au-dessus (visible à travers les murs) et disparaît quand tu rentres.
@@ -107,10 +109,10 @@ Rien d'autre : la map, l'éclairage, les bases et les remotes sont **générés 
 | Niveau | Nom | Emplacements | Ce qui change visuellement |
 |---|---|---|---|
 | 1 | Starter Camp | 6 | Palissade en bois **basse (sautable !)**, torches |
-| 2 | Stone Outpost | 8 | Murs en pierre, piliers d'angle |
+| 2 | Stone Outpost | 8 | Murs en pierre **trop hauts pour être sautés** (entrée obligatoire), piliers d'angle |
 | 3 | Iron Fortress | 12 | Murs en brique, lampadaires, corniches métal |
 | 4 | Royal Keep | 16 | Marbre, grès, bannières à ta couleur, dorures |
-| 5 | Crystal Citadel | 20 | Murs de glace, cristaux néon scintillants |
+| 5 | Crystal Citadel | 20 | Murs de glace, cristaux néon scintillants sur les piliers |
 | 6 | Monster Palace | 24 | Palais de marbre et d'or + **statue géante** visible de toute la map |
 | 7 | Cosmic Throne | 30 | Murs en champ de force, anneau cosmique flottant, particules |
 
@@ -140,7 +142,7 @@ StarterPlayer › StarterPlayerScripts
     ├── Main                    démarre les contrôleurs
     └── Controllers
         ├── NotificationController   toasts + bannières animées (mobile-first)
-        └── BaseMarkerController     marqueur "🏠 YOUR BASE"
+        └── BaseMarkerController     marqueur "🏠 YOUR BASE" + caméra tournée vers tes monstres au spawn
 Workspace (généré au lancement)
 ├── Map           sol, trottoirs, arbres, lampadaires, limites
 ├── MonsterArea   Monster Road, portail, marqueurs RoadStart / RoadEnd
@@ -163,7 +165,8 @@ Workspace (généré au lancement)
    → Compréhensible en 5 secondes sur un TikTok, et deux joueurs peuvent se disputer le même monstre rare.
 2. **Toutes les bases face à la route** : chacun voit la base des autres → les cibles sont évidentes et les riches sont visibles.
 3. **Murs du niveau 1 sautables (4 studs)** : une base débutante est facile à piller, mais elle ne contient que des monstres communs.
-   Plus la base monte de niveau, plus les murs sont hauts → il faut passer par **l'entrée**, que le LOCK BASE (Phase 4) pourra fermer.
+   Dès le niveau 2, les murs ne sont plus sautables (même depuis un socle) → il faut passer par **l'entrée**, que le LOCK BASE (Phase 4) pourra fermer.
+   Les décors (torches, lampadaires, statue) ne sont pas solides : impossible de s'en servir comme échelle.
 4. **Emplacements remplis du fond vers l'entrée** : les premiers monstres sont les plus loin de la route, donc le voleur met plus de temps à repartir et le propriétaire a le temps de réagir.
 5. **Event Zone au bout de la route** : les événements KING MONSTER / BOSS auront lieu loin des bases.
    Y aller = laisser sa base sans surveillance → vrai dilemme risque/récompense.

@@ -1,17 +1,20 @@
 --!strict
--- BaseMarkerController : affiche "🏠 YOUR BASE" au-dessus de ta base, visible à travers les murs,
--- pour ne jamais être perdu (essentiel quand on revient d'un vol !).
--- Le marqueur se cache quand on est déjà dans sa base pour ne pas encombrer l'écran.
+-- BaseMarkerController : tout ce qui aide le joueur à se repérer par rapport à SA base.
+--   * Marqueur "🏠 YOUR BASE ▼" au-dessus de ta base, visible à travers les murs
+--     (essentiel quand on revient d'un vol !). Caché quand tu es déjà chez toi.
+--   * Caméra : après chaque apparition, elle est recalée pour regarder tes monstres.
 -- Purement visuel et local : le serveur reste seul maître de l'attribution des bases.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared:WaitForChild("Config"):WaitForChild("GameConfig"))
 
-local HIDE_DISTANCE = 45 -- studs : en dessous, on est "chez soi"
+local HOME_MARGIN = 2 -- studs autour du sol de la base qui comptent encore comme "chez soi"
 local CHECK_INTERVAL = 0.5 -- pas besoin de vérifier à chaque frame
+local CAMERA_SNAP_TIMEOUT = 5
 
 local player = Players.LocalPlayer
 
@@ -26,7 +29,10 @@ local function buildMarker(adornee: BasePart, accent: Color3): BillboardGui
 	gui.Adornee = adornee
 	gui.AlwaysOnTop = true
 	gui.Size = UDim2.fromOffset(190, 64)
-	gui.StudsOffsetWorldSpace = Vector3.new(0, 14, 0)
+	-- Même point d'ancrage que le haut de la carte du propriétaire (OwnerBillboard : 7 + 4/2 studs),
+	-- puis décalé de sa propre hauteur vers le haut : jamais de chevauchement, à toute distance.
+	gui.StudsOffsetWorldSpace = Vector3.new(0, 9, 0)
+	gui.SizeOffset = Vector2.new(0, 0.6)
 	gui.LightInfluence = 0
 	gui.ResetOnSpawn = false
 
@@ -82,19 +88,46 @@ local function setupForBase(baseIndex: number)
 	homeFloor = floor
 end
 
+-- Vrai si la position est au-dessus du sol de notre base (+ petite marge).
+local function isAtHome(position: Vector3): boolean
+	local floor = homeFloor
+	if not floor then
+		return false
+	end
+	local relative = floor.CFrame:PointToObjectSpace(position)
+	return math.abs(relative.X) <= floor.Size.X / 2 + HOME_MARGIN
+		and math.abs(relative.Z) <= floor.Size.Z / 2 + HOME_MARGIN
+end
+
 local function refreshVisibility()
 	local currentMarker = marker
-	local floor = homeFloor
-	if not currentMarker or not floor then
+	if not currentMarker then
 		return
 	end
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if not root then
-		currentMarker.Enabled = true
+	currentMarker.Enabled = not (root and isAtHome(root.Position))
+end
+
+-- Le personnage apparaît d'abord au spawn de secours, et la caméra Roblox se cale sur cette
+-- direction-là. On attend que la téléportation serveur soit arrivée (root dans notre base),
+-- puis on oriente la caméra dans le dos du joueur, vers ses monstres.
+local function snapCameraWhenHome(character: Model)
+	local root = character:WaitForChild("HumanoidRootPart", 10)
+	if not (root and root:IsA("BasePart")) then
 		return
 	end
-	currentMarker.Enabled = (root.Position - floor.Position).Magnitude > HIDE_DISTANCE
+	local deadline = os.clock() + CAMERA_SNAP_TIMEOUT
+	while os.clock() < deadline and character.Parent and player.Character == character do
+		if isAtHome(root.Position) then
+			RunService.RenderStepped:Wait()
+			local camera = workspace.CurrentCamera
+			local look = root.CFrame.LookVector
+			camera.CFrame = CFrame.lookAt(root.Position - look * 12 + Vector3.new(0, 5, 0), root.Position + look * 6)
+			return
+		end
+		RunService.Heartbeat:Wait()
+	end
 end
 
 function BaseMarkerController.Start()
@@ -106,6 +139,13 @@ function BaseMarkerController.Start()
 	end
 	player:GetAttributeChangedSignal("BaseIndex"):Connect(onBaseIndexChanged)
 	onBaseIndexChanged()
+
+	player.CharacterAdded:Connect(function(character)
+		task.spawn(snapCameraWhenHome, character)
+	end)
+	if player.Character then
+		task.spawn(snapCameraWhenHome, player.Character)
+	end
 
 	task.spawn(function()
 		while true do

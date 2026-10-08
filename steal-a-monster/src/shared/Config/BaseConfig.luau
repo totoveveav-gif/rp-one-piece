@@ -13,7 +13,9 @@ export type BaseLevel = {
 	FloorColor: Color3,
 	WallMaterial: Enum.Material,
 	WallColor: Color3,
-	WallHeight: number, -- un mur < 7 studs peut être sauté par-dessus (base facile à piller)
+	-- Hauteur au-dessus du sol de la base. Saut par défaut = 7.2 et un socle ajoute 1 stud :
+	-- il faut >= 8.5 pour qu'un mur ne soit PAS sautable (seul le niveau 1 l'est, exprès).
+	WallHeight: number,
 	TrimMaterial: Enum.Material,
 	TrimColor: Color3,
 
@@ -61,7 +63,7 @@ BaseConfig.Levels = {
 		FloorColor = Color3.fromRGB(120, 125, 135),
 		WallMaterial = Enum.Material.Cobblestone,
 		WallColor = Color3.fromRGB(150, 150, 160),
-		WallHeight = 7,
+		WallHeight = 9.5,
 		TrimMaterial = Enum.Material.Slate,
 		TrimColor = Color3.fromRGB(95, 98, 108),
 		Torches = true,
@@ -81,7 +83,7 @@ BaseConfig.Levels = {
 		FloorColor = Color3.fromRGB(155, 145, 135),
 		WallMaterial = Enum.Material.Brick,
 		WallColor = Color3.fromRGB(170, 95, 72),
-		WallHeight = 9,
+		WallHeight = 10,
 		TrimMaterial = Enum.Material.DiamondPlate,
 		TrimColor = Color3.fromRGB(110, 115, 125),
 		Torches = false,
@@ -101,7 +103,7 @@ BaseConfig.Levels = {
 		FloorColor = Color3.fromRGB(230, 228, 235),
 		WallMaterial = Enum.Material.Sandstone,
 		WallColor = Color3.fromRGB(232, 212, 172),
-		WallHeight = 10,
+		WallHeight = 11,
 		TrimMaterial = Enum.Material.Metal,
 		TrimColor = Color3.fromRGB(240, 190, 60),
 		Torches = false,
@@ -121,11 +123,11 @@ BaseConfig.Levels = {
 		FloorColor = Color3.fromRGB(205, 225, 255),
 		WallMaterial = Enum.Material.Glacier,
 		WallColor = Color3.fromRGB(175, 215, 255),
-		WallHeight = 11,
+		WallHeight = 12,
 		TrimMaterial = Enum.Material.Neon,
 		TrimColor = Color3.fromRGB(120, 200, 255),
 		Torches = false,
-		Pillars = false,
+		Pillars = true,
 		Lamps = true,
 		Banners = true,
 		WallTrim = true,
@@ -141,7 +143,7 @@ BaseConfig.Levels = {
 		FloorColor = Color3.fromRGB(250, 242, 225),
 		WallMaterial = Enum.Material.Marble,
 		WallColor = Color3.fromRGB(245, 236, 218),
-		WallHeight = 12,
+		WallHeight = 13,
 		TrimMaterial = Enum.Material.Foil,
 		TrimColor = Color3.fromRGB(255, 200, 60),
 		Torches = false,
@@ -177,9 +179,16 @@ BaseConfig.Levels = {
 
 BaseConfig.MAX_LEVEL = #BaseConfig.Levels
 
+-- Ramène n'importe quel nombre dans 1..MAX_LEVEL (NaN -> 1 : NaN ~= NaN en Luau).
+function BaseConfig.Clamp(level: number): number
+	if level ~= level then
+		return 1
+	end
+	return math.clamp(math.floor(level), 1, BaseConfig.MAX_LEVEL)
+end
+
 function BaseConfig.Get(level: number): BaseLevel
-	local clamped = math.clamp(math.floor(level), 1, BaseConfig.MAX_LEVEL)
-	return BaseConfig.Levels[clamped]
+	return BaseConfig.Levels[BaseConfig.Clamp(level)]
 end
 
 return BaseConfig

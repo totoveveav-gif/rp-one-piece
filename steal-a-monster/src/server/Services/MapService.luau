@@ -49,6 +49,8 @@ local PORTAL_Z = -HALF_LENGTH - 15
 local EXIT_Z = HALF_LENGTH + 15
 local ARENA_Z = EXIT_Z + 70
 local ARENA_RADIUS = 45
+-- La route visuelle va du portail jusqu'à l'arche de l'Event Zone (sans bande d'herbe aux bouts).
+local ROAD_VISUAL_LENGTH = EXIT_Z - PORTAL_Z
 
 -- Taille du terrain
 local GROUND_HALF_X = 220
@@ -133,7 +135,7 @@ local function buildGround(map: Folder)
 	for _, side in { -1, 1 } do
 		Part({
 			Name = "Sidewalk",
-			Size = Vector3.new(sidewalkWidth, 0.3, GameConfig.ROAD_LENGTH),
+			Size = Vector3.new(sidewalkWidth, 0.3, ROAD_VISUAL_LENGTH),
 			CFrame = CFrame.new(side * (HALF_ROAD + sidewalkWidth / 2), 0.15, 0),
 			Material = Enum.Material.Pavement,
 			Color = COLORS.Sidewalk,
@@ -145,7 +147,7 @@ end
 local function buildRoad(area: Folder)
 	Part({
 		Name = "MonsterRoad",
-		Size = Vector3.new(GameConfig.ROAD_WIDTH, 0.5, GameConfig.ROAD_LENGTH),
+		Size = Vector3.new(GameConfig.ROAD_WIDTH, 0.5, ROAD_VISUAL_LENGTH),
 		CFrame = CFrame.new(0, 0.25, 0),
 		Color = COLORS.Road,
 		Parent = area,
@@ -154,7 +156,7 @@ local function buildRoad(area: Folder)
 	for _, side in { -1, 1 } do
 		Part({
 			Name = "RoadEdge",
-			Size = Vector3.new(1, 0.6, GameConfig.ROAD_LENGTH),
+			Size = Vector3.new(1, 0.6, ROAD_VISUAL_LENGTH),
 			CFrame = CFrame.new(side * (HALF_ROAD - 0.5), 0.3, 0),
 			Material = Enum.Material.Neon,
 			Color = COLORS.RoadGlow,
@@ -475,8 +477,9 @@ function MapService:Init()
 	local fallbackSpawn = buildFallbackSpawn(map)
 
 	-- Marqueurs utilisés par les phases suivantes (marche des monstres, événements)
-	local roadStart = marker("RoadStart", Vector3.new(0, 1, -HALF_LENGTH + 4), monsterArea)
-	local roadEnd = marker("RoadEnd", Vector3.new(0, 1, HALF_LENGTH - 4), monsterArea)
+	-- Les monstres sortiront du portail (RoadStart) et disparaîtront sous l'arche de sortie (RoadEnd).
+	local roadStart = marker("RoadStart", Vector3.new(0, 1, PORTAL_Z + 3), monsterArea)
+	local roadEnd = marker("RoadEnd", Vector3.new(0, 1, EXIT_Z), monsterArea)
 
 	map.Parent = workspace
 	monsterArea.Parent = workspace

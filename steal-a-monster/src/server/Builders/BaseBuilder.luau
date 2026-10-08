@@ -77,10 +77,12 @@ local function buildSlots(model: Model, origin: CFrame)
 			slot:SetAttribute("SlotIndex", index)
 			slot:SetAttribute("Unlocked", false)
 
-			-- Point d'ancrage du monstre (orienté vers la route pour que les monstres "regardent" les visiteurs)
+			-- Point d'ancrage du monstre (dessus du socle), orienté vers la route :
+			-- les monstres "regardent" les visiteurs. Un Attachment stocke une position RELATIVE
+			-- à sa pièce : on convertit donc la position monde voulue dans le repère du socle.
 			local anchor = Instance.new("Attachment")
 			anchor.Name = "MonsterAnchor"
-			anchor.WorldCFrame = origin * CFrame.new(x, FT + SLOT_HEIGHT, z) * CFrame.Angles(0, math.rad(180), 0)
+			anchor.CFrame = slot.CFrame:ToObjectSpace(origin * CFrame.new(x, FT + SLOT_HEIGHT, z))
 			anchor.Parent = slot
 		end
 	end
@@ -95,7 +97,7 @@ local function buildArch(model: Model, origin: CFrame, accent: Color3)
 		Part({
 			Name = "Pillar",
 			Size = Vector3.new(3, ARCH_HEIGHT, 3),
-			CFrame = origin * CFrame.new(side * (ENTRANCE / 2 + 1.5), FT + ARCH_HEIGHT / 2, -D / 2 + WALL_T / 2),
+			CFrame = origin * CFrame.new(side * (ENTRANCE / 2 + 1.4), FT + ARCH_HEIGHT / 2, -D / 2 + WALL_T / 2),
 			Material = Enum.Material.Slate,
 			Color = stone,
 			Parent = arch,
@@ -126,9 +128,10 @@ local function buildArch(model: Model, origin: CFrame, accent: Color3)
 	-- Plaque visible de loin : avatar + nom du propriétaire (lisible sur une vidéo TikTok).
 	local billboard = Instance.new("BillboardGui")
 	billboard.Name = "OwnerBillboard"
-	billboard.Size = UDim2.fromOffset(240, 64)
+	-- Taille en studs (Scale) : la carte rétrécit avec la distance et n'encombre pas l'écran mobile.
+	billboard.Size = UDim2.fromScale(15, 4)
 	billboard.StudsOffsetWorldSpace = Vector3.new(0, 7, 0)
-	billboard.MaxDistance = 320
+	billboard.MaxDistance = 250
 	billboard.LightInfluence = 0
 	billboard.Enabled = false
 
@@ -139,7 +142,7 @@ local function buildArch(model: Model, origin: CFrame, accent: Color3)
 	frame.BackgroundTransparency = 0.15
 	frame.Parent = billboard
 	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 16)
+	corner.CornerRadius = UDim.new(0.25, 0)
 	corner.Parent = frame
 	local stroke = Instance.new("UIStroke")
 	stroke.Name = "Stroke"
@@ -150,8 +153,8 @@ local function buildArch(model: Model, origin: CFrame, accent: Color3)
 	local avatar = Instance.new("ImageLabel")
 	avatar.Name = "Avatar"
 	avatar.BackgroundTransparency = 1
-	avatar.Size = UDim2.fromOffset(52, 52)
-	avatar.Position = UDim2.fromOffset(6, 6)
+	avatar.Size = UDim2.fromScale(0.217, 0.8125)
+	avatar.Position = UDim2.fromScale(0.025, 0.094)
 	avatar.Parent = frame
 	local avatarCorner = Instance.new("UICorner")
 	avatarCorner.CornerRadius = UDim.new(1, 0)
@@ -160,8 +163,8 @@ local function buildArch(model: Model, origin: CFrame, accent: Color3)
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Name = "OwnerName"
 	nameLabel.BackgroundTransparency = 1
-	nameLabel.Position = UDim2.fromOffset(64, 6)
-	nameLabel.Size = UDim2.new(1, -70, 0, 30)
+	nameLabel.Position = UDim2.fromScale(0.267, 0.094)
+	nameLabel.Size = UDim2.fromScale(0.708, 0.47)
 	nameLabel.Font = GameConfig.FONT
 	nameLabel.TextScaled = true
 	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -172,8 +175,8 @@ local function buildArch(model: Model, origin: CFrame, accent: Color3)
 	local levelLabel = Instance.new("TextLabel")
 	levelLabel.Name = "Level"
 	levelLabel.BackgroundTransparency = 1
-	levelLabel.Position = UDim2.fromOffset(64, 36)
-	levelLabel.Size = UDim2.new(1, -70, 0, 20)
+	levelLabel.Position = UDim2.fromScale(0.267, 0.5625)
+	levelLabel.Size = UDim2.fromScale(0.708, 0.3125)
 	levelLabel.Font = GameConfig.FONT
 	levelLabel.TextScaled = true
 	levelLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -209,9 +212,10 @@ function BaseBuilder.Create(index: number, origin: CFrame, accent: Color3, paren
 	trim.Name = "Trim"
 	trim.Parent = model
 	local trimSpecs: { PartSpec } = {
-		{ Size = Vector3.new(W, 0.3, 1), Offset = CFrame.new(0, FT + 0.15, D / 2 - 0.5) },
-		{ Size = Vector3.new(1, 0.3, D), Offset = CFrame.new(-W / 2 + 0.5, FT + 0.15, 0) },
-		{ Size = Vector3.new(1, 0.3, D), Offset = CFrame.new(W / 2 - 0.5, FT + 0.15, 0) },
+		-- Collées contre la face intérieure des murs (visibles, pas de scintillement)
+		{ Size = Vector3.new(W - 2 * WALL_T, 0.3, 1), Offset = CFrame.new(0, FT + 0.15, D / 2 - WALL_T - 0.5) },
+		{ Size = Vector3.new(1, 0.3, D - 2 * WALL_T), Offset = CFrame.new(-(W / 2 - WALL_T - 0.5), FT + 0.15, 0) },
+		{ Size = Vector3.new(1, 0.3, D - 2 * WALL_T), Offset = CFrame.new(W / 2 - WALL_T - 0.5, FT + 0.15, 0) },
 		{ Size = Vector3.new(ENTRANCE, 0.3, 2), Offset = CFrame.new(0, FT + 0.15, -D / 2 + 1) },
 	}
 	for _, spec in trimSpecs do
@@ -307,12 +311,13 @@ local CORNERS = {
 }
 
 local function buildPillars(deco: Folder, origin: CFrame, level: BaseConfig.BaseLevel)
-	local h = level.WallHeight + 3
+	-- Centrés sur les coins du sol : ils partent du sol du terrain (y = 0) pour ne pas flotter.
+	local top = FT + level.WallHeight + 3
 	for _, corner in CORNERS do
 		Part({
 			Name = "Pillar",
-			Size = Vector3.new(3.5, h, 3.5),
-			CFrame = origin * CFrame.new(corner.X, FT + h / 2, corner.Y),
+			Size = Vector3.new(3.5, top, 3.5),
+			CFrame = origin * CFrame.new(corner.X, top / 2, corner.Y),
 			Material = level.TrimMaterial == Enum.Material.Neon and Enum.Material.Marble or level.TrimMaterial,
 			Color = level.TrimColor,
 			Parent = deco,
@@ -325,10 +330,11 @@ local function buildTorches(deco: Folder, origin: CFrame)
 		local x = side * (ENTRANCE / 2 + 4)
 		Part({
 			Name = "TorchStick",
-			Size = Vector3.new(0.6, 6, 0.6),
-			CFrame = origin * CFrame.new(x, FT + 3, -D / 2 - 1),
+			Size = Vector3.new(0.6, FT + 6, 0.6),
+			CFrame = origin * CFrame.new(x, (FT + 6) / 2, -D / 2 - 1), -- planté dans le trottoir
 			Material = Enum.Material.Wood,
 			Color = Color3.fromRGB(100, 70, 45),
+			CanCollide = false, -- sinon il sert d'échelle pour passer le mur
 			Parent = deco,
 		})
 		local flame = Part({
@@ -355,6 +361,7 @@ local function buildLamps(deco: Folder, origin: CFrame, accent: Color3)
 			CFrame = origin * CFrame.new(x, FT + 4, z),
 			Material = Enum.Material.Metal,
 			Color = Color3.fromRGB(45, 45, 55),
+			CanCollide = false, -- pas d'échelle pour s'échapper par-dessus le mur
 			Parent = deco,
 		})
 		local bulb = Part({
@@ -414,15 +421,18 @@ local function buildCrystals(deco: Folder, origin: CFrame, level: BaseConfig.Bas
 	end
 end
 
--- Statue géante d'un monstre derrière la base : visible de toute la map.
+-- Statue géante d'un monstre derrière la base : posée sur un socle haut pour dépasser des murs
+-- et être visible de toute la map. Seul le socle (trop haut pour être sauté) est solide :
+-- le reste ne doit pas servir d'escalier pour entrer par-dessus le mur du fond.
 local function buildStatue(deco: Folder, origin: CFrame, level: BaseConfig.BaseLevel, accent: Color3)
-	local base = origin * CFrame.new(0, 0, D / 2 + 7)
+	local lift = level.WallHeight - 2
+	local base = origin * CFrame.new(0, lift, D / 2 + 7)
 	local gold = level.TrimColor
 	local material = level.TrimMaterial == Enum.Material.Neon and Enum.Material.Foil or level.TrimMaterial
 	Part({
 		Name = "StatuePedestal",
-		Size = Vector3.new(12, 4, 10),
-		CFrame = base * CFrame.new(0, 2, 0),
+		Size = Vector3.new(12, lift + 4, 10),
+		CFrame = origin * CFrame.new(0, (lift + 4) / 2, D / 2 + 7),
 		Material = Enum.Material.Marble,
 		Color = Color3.fromRGB(240, 236, 228),
 		Parent = deco,
@@ -434,6 +444,7 @@ local function buildStatue(deco: Folder, origin: CFrame, level: BaseConfig.BaseL
 		CFrame = base * CFrame.new(0, 9.5, 0),
 		Material = material,
 		Color = gold,
+		CanCollide = false,
 		Parent = deco,
 	})
 	Part({
@@ -443,6 +454,7 @@ local function buildStatue(deco: Folder, origin: CFrame, level: BaseConfig.BaseL
 		CFrame = base * CFrame.new(0, 17, -1),
 		Material = material,
 		Color = gold,
+		CanCollide = false,
 		Parent = deco,
 	})
 	for _, side in { -1, 1 } do
@@ -452,6 +464,7 @@ local function buildStatue(deco: Folder, origin: CFrame, level: BaseConfig.BaseL
 			CFrame = base * CFrame.new(side * 2.6, 22, -1) * CFrame.Angles(0, math.rad(180), math.rad(-15 * side)),
 			Material = material,
 			Color = gold,
+			CanCollide = false,
 			Parent = deco,
 		})
 		Part({
@@ -467,25 +480,37 @@ local function buildStatue(deco: Folder, origin: CFrame, level: BaseConfig.BaseL
 	end
 end
 
+-- Anneau cosmique flottant au-dessus de la base (niveau 7), fait de segments néon.
 local function buildAura(deco: Folder, origin: CFrame, level: BaseConfig.BaseLevel, accent: Color3)
-	local ring = Part({
-		Name = "AuraRing",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(0.6, W + 10, W + 10),
-		CFrame = origin * CFrame.new(0, FT + level.WallHeight + 10, 0) * CFrame.Angles(0, 0, math.rad(90)),
-		Material = Enum.Material.ForceField,
-		Color = accent,
-		CanCollide = false,
-		CanQuery = false,
-		CastShadow = false,
-		Parent = deco,
-	})
-	PartFactory.Sparkles(ring, level.TrimColor, 6)
+	local radius = W / 2 + 4
+	local segments = 32
+	local y = FT + level.WallHeight + 10
+	local length = 2 * math.pi * radius / segments + 0.3 -- léger chevauchement : pas de trous
+	for i = 1, segments do
+		local angle = (i / segments) * 2 * math.pi
+		local position = Vector3.new(math.cos(angle) * radius, y, math.sin(angle) * radius)
+		local tangent = Vector3.new(-math.sin(angle), 0, math.cos(angle))
+		local segment = Part({
+			Name = "AuraRing",
+			Size = Vector3.new(0.8, 0.8, length),
+			CFrame = origin * CFrame.lookAt(position, position + tangent),
+			Material = Enum.Material.Neon,
+			Color = accent,
+			Transparency = 0.25,
+			CanCollide = false,
+			CanQuery = false,
+			CastShadow = false,
+			Parent = deco,
+		})
+		if i % 8 == 0 then
+			PartFactory.Sparkles(segment, level.TrimColor, 2)
+		end
+	end
 end
 
 -- Applique (ou ré-applique) le visuel d'un niveau. Appelé par BaseService.
 function BaseBuilder.ApplyLevel(model: Model, levelNumber: number)
-	local clamped = math.clamp(math.floor(levelNumber), 1, BaseConfig.MAX_LEVEL)
+	local clamped = BaseConfig.Clamp(levelNumber)
 	local level = BaseConfig.Get(clamped)
 	local origin = getOrigin(model)
 	local accent = accentOf(model)
